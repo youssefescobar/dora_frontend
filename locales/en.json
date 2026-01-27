@@ -9,10 +9,13 @@
     "fullName": "Full Name",
     "phoneNumber": "Phone Number",
     "loading": "Loading...",
+    "optional": "(Optional)",
     "error": "Something went wrong",
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
+    "confirmDelete": "Are you sure you want to delete this?",
+    "confirmDeleteDescription": "This action cannot be undone.",
     "actions": "Actions"
   },
   "auth": {
@@ -33,6 +36,42 @@
     "sendAlert": "Send Alert",
     "groupName": "Group Name",
     "addPilgrim": "Add Pilgrim",
-    "assignBand": "Assign Band"
+    "assignBand": "Assign Band",
+    "pilgrimDetails": "Pilgrim Details",
+    "medicalHistory": "Medical History",
+    "bandStatus": "Band Status",
+    "lastLocation": "Last Location"
+  },
+  "admin": {
+    "dashboard": "Admin Dashboard",
+    "users": "Users",
+    "bands": "Hardware Bands",
+    "groups": "Groups",
+    "stats": "System Statistics",
+    "active": "Active",
+    "inactive": "Inactive",
+    "promote": "Promote to Admin",
+    "demote": "Demote to Moderator",
+    "deactivate": "Deactivate",
+    "activate": "Activate",
+    "imei": "IMEI",
+    "registerBand": "Register Band",
+    "role": "Role"
+  },
+  "landing": {
+    "heroTitle": "Smart Management for Hajj & Umrah Groups",
+    "heroSubtitle": "Ensure the safety of your pilgrims with real-time tracking, health monitoring, and instant alerts. The complete solution for modern Hajj operators.",
+    "getStarted": "Get Started Now",
+    "learnMore": "Learn More",
+    "features": {
+      "tracking": "Live GPS Tracking",
+      "trackingDesc": "Monitor the real-time location of every pilgrim in your group on an interactive map.",
+      "health": "Health Monitoring",
+      "healthDesc": "Keep track of vital health data and medical history for immediate emergency response.",
+      "alerts": "Smart Alerts",
+      "alertsDesc": "Send instant notifications to individuals or the entire group with a single click.",
+      "hardware": "IoT Wristband Integration",
+      "hardwareDesc": "Seamlessly connect with Dora smart bands for automated data collection."
+    }
   }
 }

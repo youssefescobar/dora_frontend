@@ -48,7 +48,8 @@ export default function RegisterPage() {
       toast.success(language === 'ar' ? 'تم إنشاء الحساب بنجاح' : 'Account created successfully');
       router.push('/login');
     } catch (error: any) {
-      toast.error(error.response?.data?.errors?.[0] || error.response?.data?.error || t('common.error'));
+      const errorMsg = error.response?.data?.errors?.join('\n') || error.response?.data?.error || t('common.error');
+      toast.error(errorMsg);
     }
   }
 

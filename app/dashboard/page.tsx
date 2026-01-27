@@ -35,8 +35,8 @@ export default function DashboardPage() {
     try {
       setLoading(true);
       const response = await apiClient.get('/groups/dashboard');
-      if (response.data.groups) {
-        setGroups(response.data.groups);
+      if (response.data.success) {
+        setGroups(response.data.data);
       }
     } catch (error: any) {
       if (error.response?.status === 401) {
@@ -155,7 +155,6 @@ export default function DashboardPage() {
                 key={group._id} 
                 group={group} 
                 onViewDetails={(id) => router.push(`/dashboard/groups/${id}`)}
-                onSendAlert={(id) => toast.info(language === 'ar' ? 'سيتم تفعيل هذه الميزة قريباً' : 'Alert feature coming soon')}
               />
             ))}
           </div>

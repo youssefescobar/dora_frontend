@@ -49,9 +49,15 @@ export default function LoginPage() {
       setCookie('userName', full_name);
       
       toast.success(language === 'ar' ? 'تم تسجيل الدخول بنجاح' : 'Login successful');
-      router.push('/dashboard');
+      
+      if (role === 'admin') {
+        router.push('/admin');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (error: any) {
-      toast.error(error.response?.data?.error || t('common.error'));
+      const errorMsg = error.response?.data?.errors?.join('\n') || error.response?.data?.error || t('common.error');
+      toast.error(errorMsg);
     }
   }
 

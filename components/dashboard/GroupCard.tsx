@@ -14,7 +14,6 @@ interface GroupCardProps {
     pilgrims: any[];
   };
   onViewDetails: (id: string) => void;
-  onSendAlert: (id: string) => void;
 }
 
 export function GroupCard({ group, onViewDetails, onSendAlert }: GroupCardProps) {
@@ -33,17 +32,13 @@ export function GroupCard({ group, onViewDetails, onSendAlert }: GroupCardProps)
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Watch className="w-4 h-4" />
-            <span>{activeBands} {t('dashboard.bands')} {t('common.active')}</span>
+            <span>{activeBands} {t('dashboard.bands')} {t('admin.active')}</span>
           </div>
           
           <div className="grid grid-cols-2 gap-2 mt-4">
             <Button variant="outline" size="sm" onClick={() => onViewDetails(group._id)} className="gap-2">
               <Users className="w-4 h-4" />
               {t('common.actions')}
-            </Button>
-            <Button variant="default" size="sm" onClick={() => onSendAlert(group._id)} className="gap-2">
-              <Bell className="w-4 h-4" />
-              {t('dashboard.sendAlert')}
             </Button>
           </div>
         </div>
