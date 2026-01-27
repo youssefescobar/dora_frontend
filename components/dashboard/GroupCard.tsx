@@ -14,6 +14,7 @@ interface GroupCardProps {
     pilgrims: any[];
   };
   onViewDetails: (id: string) => void;
+  onSendAlert: (groupId: string, groupName: string) => void;
 }
 
 export function GroupCard({ group, onViewDetails, onSendAlert }: GroupCardProps) {
@@ -39,6 +40,10 @@ export function GroupCard({ group, onViewDetails, onSendAlert }: GroupCardProps)
             <Button variant="outline" size="sm" onClick={() => onViewDetails(group._id)} className="gap-2">
               <Users className="w-4 h-4" />
               {t('common.actions')}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => onSendAlert(group._id, group.group_name)} className="gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+              <Bell className="w-4 h-4" />
+              {t('dashboard.sendAlert')}
             </Button>
           </div>
         </div>

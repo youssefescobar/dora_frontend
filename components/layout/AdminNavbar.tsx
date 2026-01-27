@@ -71,12 +71,11 @@ export function AdminNavbar() {
         <div className="hidden md:flex items-center gap-1 mx-4">
           {navItems.map((item) => (
             <Link key={item.href} href={item.href}>
-              <Button 
-                variant={pathname === item.href ? "secondary" : "ghost"} 
-                size="sm"
-                className={cn("gap-2", pathname === item.href && "bg-slate-100 text-primary")}
-              >
-                <item.icon className="w-4 h-4" />
+                              <Button 
+                                variant={pathname.startsWith(item.href) ? "secondary" : "ghost"} 
+                                size="sm"
+                                className={cn("gap-2", pathname.startsWith(item.href) && "bg-slate-100 text-primary")}
+                              >                <item.icon className="w-4 h-4" />
                 {item.label}
               </Button>
             </Link>
@@ -135,7 +134,7 @@ export function AdminNavbar() {
                 {navItems.map((item) => (
                   <Link key={item.href} href={item.href}>
                     <Button 
-                      variant={pathname === item.href ? "secondary" : "ghost"} 
+                      variant={pathname.startsWith(item.href) ? "secondary" : "ghost"} 
                       className="w-full justify-start gap-2"
                     >
                       <item.icon className="w-4 h-4" />

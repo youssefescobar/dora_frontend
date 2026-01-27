@@ -12,7 +12,8 @@ import {
   Loader2,
   Trash2,
   Bell,
-  AlertTriangle
+  AlertTriangle,
+  Pencil
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/lib/LanguageContext';
@@ -48,9 +49,12 @@ export default function GroupDetailsPage() {
   const router = useRouter();
   const [group, setGroup] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isEditingGroupName, setIsEditingGroupName] = useState(false);
+  const [editedGroupName, setEditedGroupName] = useState('');
   
   // Pilgrim Registration State
   const [isRegDialogOpen, setIsRegDialogOpen] = useState(false);
+  const [currentPilgrimDialogTab, setCurrentPilgrimDialogTab] = useState<'register' | 'search'>('register');
   const [newPilgrim, setNewPilgrim] = useState({
     full_name: '',
     national_id: '',
@@ -58,6 +62,9 @@ export default function GroupDetailsPage() {
     email: ''
   });
   const [registering, setRegistering] = useState(false);
+  const [searchPilgrimTerm, setSearchPilgrimTerm] = useState('');
+  const [foundPilgrims, setFoundPilgrims] = useState<any[]>([]);
+  const [searchingPilgrims, setSearchingPilgrims] = useState(false);
 
   // Band Assignment State
   const [isBandDialogOpen, setIsBandDialogOpen] = useState(false);
@@ -76,6 +83,23 @@ export default function GroupDetailsPage() {
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationTarget, setNotificationTarget] = useState<{ type: 'group' | 'pilgrim', id: string, name?: string } | null>(null);
   const [sendingNoti, setSendingNoti] = useState(false);
+
+  const handleUpdateGroupName = async () => {
+    try {
+      if (!editedGroupName.trim()) {
+        toast.error(language === 'ar' ? 'اسم المجموعة لا يمكن أن يكون فارغًا' : 'Group name cannot be empty');
+        return;
+      }
+      const response = await apiClient.put(`/groups/${id}`, { group_name: editedGroupName });
+      if (response.data.message) {
+        toast.success(response.data.message);
+        setGroup((prev: any) => ({ ...prev, group_name: editedGroupName }));
+        setIsEditingGroupName(false);
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || t('common.error'));
+    }
+  };
 
   const fetchAvailableBands = async () => {
     try {
@@ -96,21 +120,51 @@ export default function GroupDetailsPage() {
     }
   }, [isBandDialogOpen]);
 
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchPilgrimTerm.trim()) {
+        setSearchingPilgrims(true);
+        apiClient.get('/auth/search-pilgrims', { params: { search: searchPilgrimTerm, limit: 10 } })
+          .then(response => {
+            if (response.data.success) {
+              // Filter out pilgrims already in the group
+              const pilgrimsInGroupIds = new Set(group?.pilgrims.map((p: any) => p._id));
+              const filteredResults = response.data.data.filter((p: any) => !pilgrimsInGroupIds.has(p._id));
+              setFoundPilgrims(filteredResults);
+            }
+          })
+          .catch(error => {
+            console.error('Pilgrim search error:', error);
+            setFoundPilgrims([]);
+          })
+          .finally(() => {
+            setSearchingPilgrims(false);
+          });
+      } else {
+        setFoundPilgrims([]);
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchPilgrimTerm, group?.pilgrims]);
+
   const fetchGroupDetails = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/groups/dashboard');
-      if (response.data.success) {
-        const currentGroup = response.data.data.find((g: any) => g._id === id);
-        if (currentGroup) {
-          setGroup(currentGroup);
-        } else {
-          toast.error(language === 'ar' ? 'المجموعة غير موجودة' : 'Group not found');
-          router.push('/dashboard');
-        }
+      const response = await apiClient.get(`/groups/${id}`);
+      if (response.data) { // Assuming direct group object, not { success: true, data: group }
+        setGroup(response.data);
+      } else {
+        toast.error(language === 'ar' ? 'المجموعة غير موجودة' : 'Group not found');
+        router.push('/dashboard');
       }
     } catch (error: any) {
-      toast.error(t('common.error'));
+      if (error.response && error.response.status === 404) {
+        toast.error(language === 'ar' ? 'المجموعة غير موجودة' : 'Group not found');
+        router.push('/dashboard');
+      } else {
+        toast.error(t('common.error'));
+      }
     } finally {
       setLoading(false);
     }
@@ -147,6 +201,22 @@ export default function GroupDetailsPage() {
     }
   };
 
+  const handleAddExistingPilgrim = async (pilgrimId: string) => {
+    try {
+      setRegistering(true); // Re-using registering state for adding existing pilgrim
+      await apiClient.post(`/groups/${id}/add-pilgrim`, { user_id: pilgrimId });
+      toast.success(language === 'ar' ? 'تمت إضافة الحاج الموجود بنجاح' : 'Existing pilgrim added successfully');
+      setIsRegDialogOpen(false);
+      setSearchPilgrimTerm('');
+      setFoundPilgrims([]);
+      fetchGroupDetails();
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || t('common.error'));
+    } finally {
+      setRegistering(false);
+    }
+  };
+
   const handleAssignBand = async () => {
     try {
       setAssigning(true);
@@ -158,6 +228,19 @@ export default function GroupDetailsPage() {
       toast.success(language === 'ar' ? 'تم ربط السوار بنجاح' : 'Band assigned successfully');
       setIsBandDialogOpen(false);
       setSerialNumber('');
+      fetchGroupDetails();
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || t('common.error'));
+    } finally {
+      setAssigning(false);
+    }
+  };
+
+  const handleUnassignBand = async (pilgrimId: string) => {
+    try {
+      setAssigning(true); // Re-using assigning state for unassigning
+      await apiClient.post('/groups/unassign-band', { user_id: pilgrimId });
+      toast.success(language === 'ar' ? 'تم إلغاء ربط السوار بنجاح' : 'Band unassigned successfully');
       fetchGroupDetails();
     } catch (error: any) {
       toast.error(error.response?.data?.error || t('common.error'));
@@ -246,7 +329,36 @@ export default function GroupDetailsPage() {
           <div className="flex-1 space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <h1 className="text-3xl font-bold text-slate-900">{group?.group_name}</h1>
+                {isEditingGroupName ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={editedGroupName}
+                      onChange={(e) => setEditedGroupName(e.target.value)}
+                      className="text-3xl font-bold text-slate-900 h-auto p-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleUpdateGroupName}
+                      disabled={editedGroupName.trim() === group?.group_name || editedGroupName.trim() === ''}
+                    >
+                      {t('common.save')}
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setIsEditingGroupName(false)}>
+                      {t('common.cancel')}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-3xl font-bold text-slate-900">{group?.group_name}</h1>
+                    <Button variant="ghost" size="icon" onClick={() => {
+                      setEditedGroupName(group?.group_name);
+                      setIsEditingGroupName(true);
+                    }}>
+                      <Pencil className="w-4 h-4 text-muted-foreground" />
+                    </Button>
+                  </div>
+                )}
                 <p className="text-muted-foreground">
                   {group?.pilgrims.length} {t('dashboard.pilgrims')} {language === 'ar' ? 'مسجلين' : 'registered'}
                 </p>
@@ -277,7 +389,16 @@ export default function GroupDetailsPage() {
                   {t('dashboard.sendAlert')}
                 </Button>
 
-                <Dialog open={isRegDialogOpen} onOpenChange={setIsRegDialogOpen}>
+                <Dialog open={isRegDialogOpen} onOpenChange={(open) => {
+                  setIsRegDialogOpen(open);
+                  if (!open) {
+                    // Reset states when dialog closes
+                    setCurrentPilgrimDialogTab('register');
+                    setNewPilgrim({ full_name: '', national_id: '', medical_history: '', email: '' });
+                    setSearchPilgrimTerm('');
+                    setFoundPilgrims([]);
+                  }
+                }}>
                   <DialogTrigger asChild>
                     <Button className="gap-2">
                       <UserPlus className="w-4 h-4" />
@@ -288,53 +409,115 @@ export default function GroupDetailsPage() {
                     <DialogHeader>
                       <DialogTitle>{t('dashboard.addPilgrim')}</DialogTitle>
                       <DialogDescription>
-                        {language === 'ar' ? 'أدخل بيانات الحاج الجديد' : 'Enter the details of the new pilgrim'}
+                        {currentPilgrimDialogTab === 'register'
+                          ? (language === 'ar' ? 'أدخل بيانات الحاج الجديد لإضافته إلى المجموعة' : 'Enter the details of the new pilgrim to add to the group')
+                          : (language === 'ar' ? 'ابحث عن حاجز موجود لإضافته إلى المجموعة' : 'Search for an existing pilgrim to add to the group')
+                        }
                       </DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="full_name">{t('common.fullName')}</Label>
-                        <Input 
-                          id="full_name" 
-                          value={newPilgrim.full_name}
-                          onChange={e => setNewPilgrim({...newPilgrim, full_name: e.target.value})}
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="national_id">{language === 'ar' ? 'رقم الهوية' : 'National ID'}</Label>
-                        <Input 
-                          id="national_id" 
-                          value={newPilgrim.national_id}
-                          onChange={e => setNewPilgrim({...newPilgrim, national_id: e.target.value})}
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="medical">{language === 'ar' ? 'التاريخ الطبي' : 'Medical History'}</Label>
-                        <Input 
-                          id="medical" 
-                          value={newPilgrim.medical_history}
-                          onChange={e => setNewPilgrim({...newPilgrim, medical_history: e.target.value})}
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="email" className="flex justify-between">
-                          {t('common.email')}
-                          <span className="text-xs font-normal text-muted-foreground">{t('common.optional')}</span>
-                        </Label>
-                        <Input 
-                          id="email" 
-                          type="email"
-                          value={newPilgrim.email}
-                          onChange={e => setNewPilgrim({...newPilgrim, email: e.target.value})}
-                          placeholder="example@email.com"
-                        />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button onClick={handleRegisterPilgrim} disabled={registering}>
-                        {registering ? <Loader2 className="w-4 h-4 animate-spin" /> : t('common.save')}
+
+                    <div className="flex border-b">
+                      <Button
+                        variant="ghost"
+                        onClick={() => setCurrentPilgrimDialogTab('register')}
+                        className={`rounded-none border-b-2 ${currentPilgrimDialogTab === 'register' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'}`}
+                      >
+                        {t('dashboard.registerNew')}
                       </Button>
-                    </DialogFooter>
+                      <Button
+                        variant="ghost"
+                        onClick={() => setCurrentPilgrimDialogTab('search')}
+                        className={`rounded-none border-b-2 ${currentPilgrimDialogTab === 'search' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'}`}
+                      >
+                        {t('dashboard.searchExisting')}
+                      </Button>
+                    </div>
+
+                    {currentPilgrimDialogTab === 'register' ? (
+                      <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="full_name_reg">{t('common.fullName')}</Label>
+                          <Input 
+                            id="full_name_reg" 
+                            value={newPilgrim.full_name}
+                            onChange={e => setNewPilgrim({...newPilgrim, full_name: e.target.value})}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="national_id_reg">{language === 'ar' ? 'رقم الهوية' : 'National ID'}</Label>
+                          <Input 
+                            id="national_id_reg" 
+                            value={newPilgrim.national_id}
+                            onChange={e => setNewPilgrim({...newPilgrim, national_id: e.target.value})}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="medical_reg">{language === 'ar' ? 'التاريخ الطبي' : 'Medical History'}</Label>
+                          <Input 
+                            id="medical_reg" 
+                            value={newPilgrim.medical_history}
+                            onChange={e => setNewPilgrim({...newPilgrim, medical_history: e.target.value})}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="email_reg" className="flex justify-between">
+                            {t('common.email')}
+                            <span className="text-xs font-normal text-muted-foreground">{t('common.optional')}</span>
+                          </Label>
+                          <Input 
+                            id="email_reg" 
+                            type="email"
+                            value={newPilgrim.email}
+                            onChange={e => setNewPilgrim({...newPilgrim, email: e.target.value})}
+                            placeholder="example@email.com"
+                          />
+                        </div>
+                        <DialogFooter>
+                          <Button onClick={handleRegisterPilgrim} disabled={registering}>
+                            {registering ? <Loader2 className="w-4 h-4 animate-spin" /> : t('common.save')}
+                          </Button>
+                        </DialogFooter>
+                      </div>
+                    ) : (
+                      <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="search_pilgrim">{t('dashboard.searchPilgrim')}</Label>
+                          <Input
+                            id="search_pilgrim"
+                            placeholder={language === 'ar' ? 'ابحث بالاسم أو رقم الهوية' : 'Search by name or national ID'}
+                            value={searchPilgrimTerm}
+                            onChange={e => setSearchPilgrimTerm(e.target.value)}
+                          />
+                        </div>
+                        {searchingPilgrims ? (
+                          <div className="flex justify-center py-4">
+                            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                          </div>
+                        ) : foundPilgrims.length > 0 ? (
+                          <div className="space-y-2 max-h-60 overflow-y-auto">
+                            {foundPilgrims.map((pilgrim: any) => (
+                              <div key={pilgrim._id} className="flex items-center justify-between p-2 border rounded-md">
+                                <div>
+                                  <p className="font-medium">{pilgrim.full_name}</p>
+                                  <p className="text-sm text-muted-foreground">{pilgrim.national_id}</p>
+                                </div>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleAddExistingPilgrim(pilgrim._id)}
+                                >
+                                  {t('dashboard.add')}
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : searchPilgrimTerm.trim() && !searchingPilgrims ? (
+                          <p className="text-center text-muted-foreground py-4">{t('dashboard.noPilgrimsFound')}</p>
+                        ) : (
+                          <p className="text-center text-muted-foreground py-4">{t('dashboard.typeToSearch')}</p>
+                        )}
+                      </div>
+                    )}
                   </DialogContent>
                 </Dialog>
               </div>
@@ -372,9 +555,19 @@ export default function GroupDetailsPage() {
                         <TableCell>{pilgrim.national_id}</TableCell>
                         <TableCell>
                           {pilgrim.band_info ? (
-                            <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100">
-                              {pilgrim.band_info.serial_number}
-                            </Badge>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100">
+                                {pilgrim.band_info.serial_number}
+                              </Badge>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 text-xs gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => handleUnassignBand(pilgrim._id)}
+                              >
+                                {t('dashboard.unassignBand')}
+                              </Button>
+                            </div>
                           ) : (
                             <Button 
                               variant="outline" 
@@ -448,13 +641,13 @@ export default function GroupDetailsPage() {
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">{language === 'ar' ? 'متصل' : 'Connected'}</span>
                       <span className="font-bold text-green-600">
-                        {group?.pilgrims.filter((p: any) => p.band_info?.last_location).length}
+                        {(group?.pilgrims || []).filter((p: any) => p.band_info?.last_location).length}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">{language === 'ar' ? 'غير متصل' : 'Offline'}</span>
                       <span className="font-bold text-slate-400">
-                        {group?.pilgrims.length - group?.pilgrims.filter((p: any) => p.band_info?.last_location).length}
+                        {(group?.pilgrims || []).length - (group?.pilgrims || []).filter((p: any) => p.band_info?.last_location).length}
                       </span>
                     </div>
                   </div>

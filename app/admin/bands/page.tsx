@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
 import { 
   Filter, 
   MoreHorizontal, 
@@ -57,6 +58,7 @@ interface Band {
 
 export default function BandsPage() {
   const { t } = useLanguage();
+  const router = useRouter();
   const [bands, setBands] = useState<Band[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
@@ -257,7 +259,14 @@ export default function BandsPage() {
             ) : (
               bands.map((band) => (
                 <TableRow key={band._id}>
-                  <TableCell className="font-mono font-medium">{band.serial_number}</TableCell>
+                  <TableCell className="font-mono font-medium">
+                    <button
+                      onClick={() => router.push(`/admin/bands/${band.serial_number}`)}
+                      className="hover:underline text-left"
+                    >
+                      {band.serial_number}
+                    </button>
+                  </TableCell>
                   <TableCell className="font-mono text-sm">{band.imei}</TableCell>
                   <TableCell>
                     {band.current_user_id ? (

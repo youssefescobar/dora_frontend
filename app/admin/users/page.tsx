@@ -11,7 +11,8 @@ import {
   UserCheck,
   Loader2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/lib/LanguageContext';
@@ -35,6 +36,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 // Removed Select imports
 
 export default function UsersPage() {
@@ -44,6 +53,9 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<any>(null);
+  const [deleting, setDeleting] = useState(false);
 
 
   const fetchUsers = async () => {
@@ -83,6 +95,23 @@ export default function UsersPage() {
       fetchUsers();
     } catch (error: any) {
       toast.error(error.response?.data?.error || t('common.error'));
+    }
+  };
+
+  const handlePermanentDeleteUser = async () => {
+    if (!userToDelete) return;
+
+    try {
+      setDeleting(true);
+      await apiClient.delete(`/admin/users/${userToDelete._id}/force`);
+      toast.success('User permanently deleted successfully');
+      fetchUsers();
+      setIsDeleteConfirmOpen(false);
+      setUserToDelete(null);
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || t('common.error'));
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -190,6 +219,16 @@ export default function UsersPage() {
                             {t('admin.activate')}
                           </DropdownMenuItem>
                         )}
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setUserToDelete(user);
+                            setIsDeleteConfirmOpen(true);
+                          }}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          {t('admin.deletePermanently')}
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -221,6 +260,33 @@ export default function UsersPage() {
           </Button>
         </div>
       </div>
+
+      <Dialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('common.confirmDelete')}</DialogTitle>
+            <DialogDescription>
+              {language === 'ar' ? `هل أنت متأكد أنك تريد حذف المستخدم ${userToDelete?.full_name} بشكل دائم؟ هذا الإجراء لا يمكن التراجع عنه.` : `Are you sure you want to permanently delete the user ${userToDelete?.full_name}? This action cannot be undone.`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteConfirmOpen(false)}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handlePermanentDeleteUser}
+              disabled={deleting}
+            >
+              {deleting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                t('common.delete')
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

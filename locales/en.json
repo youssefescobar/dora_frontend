@@ -16,7 +16,11 @@
     "delete": "Delete",
     "confirmDelete": "Are you sure you want to delete this?",
     "confirmDeleteDescription": "This action cannot be undone.",
-    "actions": "Actions"
+    "actions": "Actions",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page",
+    "saveChanges": "Save Changes"
   },
   "auth": {
     "welcomeBack": "Welcome Back",
@@ -40,7 +44,19 @@
     "pilgrimDetails": "Pilgrim Details",
     "medicalHistory": "Medical History",
     "bandStatus": "Band Status",
-    "lastLocation": "Last Location"
+    "lastLocation": "Last Location",
+    "unassignBand": "Unassign Band",
+    "myProfile": "My Profile",
+    "updateProfileInfo": "Update Profile Information",
+    "registerNew": "Register New",
+    "searchExisting": "Search Existing",
+    "searchPilgrim": "Search Pilgrim",
+    "noPilgrimsFound": "No pilgrims found.",
+    "typeToSearch": "Type to search for pilgrims.",
+    "add": "Add",
+    "assignedTo": "Assigned To",
+    "lastUpdated": "Last Updated",
+    "battery": "Battery"
   },
   "admin": {
     "dashboard": "Admin Dashboard",
@@ -56,7 +72,8 @@
     "activate": "Activate",
     "imei": "IMEI",
     "registerBand": "Register Band",
-    "role": "Role"
+    "role": "Role",
+    "deletePermanently": "Delete Permanently"
   },
   "landing": {
     "heroTitle": "Smart Management for Hajj & Umrah Groups",

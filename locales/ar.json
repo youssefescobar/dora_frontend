@@ -16,7 +16,11 @@
     "delete": "حذف",
     "confirmDelete": "هل أنت متأكد أنك تريد حذف هذا؟",
     "confirmDeleteDescription": "لا يمكن التراجع عن هذا الإجراء.",
-    "actions": "إجراءات"
+    "actions": "إجراءات",
+    "previous": "السابق",
+    "next": "التالي",
+    "page": "صفحة",
+    "saveChanges": "حفظ التغييرات"
   },
   "auth": {
     "welcomeBack": "مرحباً بعودتك",
@@ -40,7 +44,19 @@
     "pilgrimDetails": "تفاصيل الحاج",
     "medicalHistory": "التاريخ الطبي",
     "bandStatus": "حالة السوار",
-    "lastLocation": "آخر موقع"
+    "lastLocation": "آخر موقع",
+    "unassignBand": "إلغاء ربط السوار",
+    "myProfile": "ملفي الشخصي",
+    "updateProfileInfo": "تحديث معلومات الملف الشخصي",
+    "registerNew": "تسجيل جديد",
+    "searchExisting": "بحث عن موجود",
+    "searchPilgrim": "بحث عن حاج",
+    "noPilgrimsFound": "لم يتم العثور على حجاج.",
+    "typeToSearch": "اكتب للبحث عن حجاج.",
+    "add": "إضافة",
+    "assignedTo": "مخصص لـ",
+    "lastUpdated": "آخر تحديث",
+    "battery": "البطارية"
   },
   "admin": {
     "dashboard": "لوحة تحكم المسؤول",
@@ -56,7 +72,8 @@
     "activate": "تفعيل",
     "imei": "IMEI",
     "registerBand": "تسجيل سوار",
-    "role": "الدور"
+    "role": "الدور",
+    "deletePermanently": "حذف نهائي"
   },
   "landing": {
     "heroTitle": "الإدارة الذكية لمجموعات الحج والعمرة",
