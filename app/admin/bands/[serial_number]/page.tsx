@@ -153,7 +153,7 @@ export default function BandDetailsPage() {
                     <p className="text-lg">{band.current_user_id.phone_number}</p>
                   </div>
                 </div>
-                <Button variant="outline" className="w-full mt-4" onClick={() => router.push(`/dashboard/groups/${band.current_user_id._id}/pilgrims/${band.current_user_id._id}`)}>
+                <Button variant="outline" className="w-full mt-4" onClick={() => band.current_user_id && router.push(`/dashboard/groups/${band.current_user_id._id}/pilgrims/${band.current_user_id._id}`)}>
                   {language === 'ar' ? 'عرض ملف الحاج' : 'View Pilgrim Profile'}
                 </Button>
               </CardContent>

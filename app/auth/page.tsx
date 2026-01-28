@@ -23,13 +23,18 @@ import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import PhoneInput from 'react-phone-number-input/min';
 import 'react-phone-number-input/style.css';
-import countries from 'countries-and-timezones';
-import en from 'react-phone-number-input/locale/en';
 
-const labels = { ...en };
-Object.entries(countries).forEach(([code, country]) => {
-  if (labels[code]) {
-    labels[code] = `${labels[code]} (+${country.phone})`;
+import en from 'react-phone-number-input/locale/en';
+import { getCountryCallingCode, CountryCode, getCountries } from 'libphonenumber-js';
+
+const labels: Record<string, string> = { ...en };
+const validCountryCodes = getCountries();
+Object.keys(labels).forEach((code) => {
+  if (validCountryCodes.includes(code as CountryCode)) { // Only process valid country codes
+    const callingCode = getCountryCallingCode(code as CountryCode);
+    if (callingCode) { // Check if callingCode is found
+      labels[code] = `${labels[code]} (+${callingCode})`;
+    }
   }
 });
 
