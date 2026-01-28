@@ -9,7 +9,7 @@ export function proxy(request: NextRequest) {
   // Protected routes
   if (path.startsWith('/dashboard') || path.startsWith('/admin')) {
     if (!token) {
-      return NextResponse.redirect(new URL('/login', request.url))
+      return NextResponse.redirect(new URL('/auth', request.url))
     }
   }
 
@@ -21,7 +21,7 @@ export function proxy(request: NextRequest) {
   }
 
   // Login/Register redirect if already logged in
-  if ((path === '/login' || path === '/register') && token) {
+  if (path === '/auth' && token) {
      if (role === 'admin') {
        return NextResponse.redirect(new URL('/admin', request.url))
      }
@@ -32,5 +32,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/admin/:path*', '/login', '/register'],
+  matcher: ['/dashboard/:path*', '/admin/:path*', '/auth'],
 }

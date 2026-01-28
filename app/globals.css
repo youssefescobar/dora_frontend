@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900;1000&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
+@import 'react-phone-number-input/style.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -87,10 +88,99 @@
 }
 
 @layer base {
+
   * {
+
     @apply border-border outline-ring/50;
+
   }
+
   body {
+
     @apply bg-background text-foreground;
+
   }
+
+}
+
+
+
+.phone-input {
+
+  display: flex;
+
+  align-items: center;
+
+  border: 1px solid hsl(var(--input));
+
+  border-radius: var(--radius);
+
+  padding: 0.5rem;
+
+  background-color: hsl(var(--background));
+
+}
+
+
+
+.phone-input .PhoneInputCountry {
+
+  margin-right: 0.5rem;
+
+}
+
+
+
+.phone-input .PhoneInputInput {
+
+  border: none;
+
+  background-color: transparent;
+
+  outline: none;
+
+  color: hsl(var(--foreground));
+
+}
+
+
+
+.PhoneInputCountrySelect-arrow {
+
+  display: none;
+
+}
+
+
+
+.PhoneInputCountrySelect {
+
+  background-color: hsl(var(--background));
+
+  color: hsl(var(--foreground));
+
+  border: 1px solid hsl(var(--input));
+
+  border-radius: var(--radius);
+
+  padding: 0.5rem;
+
+}
+
+
+
+.PhoneInputCountryOption {
+
+  background-color: hsl(var(--background));
+
+  color: hsl(var(--foreground));
+
+}
+
+
+
+.PhoneInputCountryOption:hover {
+
+  background-color: hsl(var(--accent));
+
 }

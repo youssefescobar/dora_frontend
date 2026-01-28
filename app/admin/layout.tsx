@@ -17,7 +17,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const role = getCookie('role');
 
     if (!token || role !== 'admin') {
-      router.push('/login');
+      router.push('/auth');
     } else {
       setAuthorized(true);
     }

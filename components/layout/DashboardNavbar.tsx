@@ -58,7 +58,7 @@ export function DashboardNavbar() {
     deleteCookie('token');
     deleteCookie('role');
     deleteCookie('userName');
-    router.push('/login');
+    router.push('/');
   };
 
   return (

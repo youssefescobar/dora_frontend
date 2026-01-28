@@ -108,7 +108,7 @@ export default function ProfilePage() {
                     <FormItem>
                       <FormLabel>{t('common.fullName')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="John Doe" {...field} />
+                        <Input placeholder="Abdullah Al-Fahad" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -121,7 +121,7 @@ export default function ProfilePage() {
                     <FormItem>
                       <FormLabel>{t('common.phoneNumber')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="+201234567890" {...field} />
+                        <Input placeholder="+966501234567" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

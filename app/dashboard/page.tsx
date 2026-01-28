@@ -54,7 +54,7 @@ export default function DashboardPage() {
       }
     } catch (error: any) {
       if (error.response?.status === 401) {
-        router.push('/login');
+        router.push('/auth');
       } else {
         toast.error(t('common.error'));
       }
@@ -66,7 +66,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const token = getCookie('token');
     if (!token) {
-      router.push('/login');
+      router.push('/auth');
     } else {
       fetchGroups();
     }

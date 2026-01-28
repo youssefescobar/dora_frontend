@@ -21,6 +21,7 @@ export function LandingNavbar() {
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
           <Image
+            key={Date.now()}
             src="/logo.jpeg"
             alt="Dora Care Logo"
             width={40}
@@ -51,12 +52,12 @@ export function LandingNavbar() {
           </DropdownMenu>
 
           <div className="flex items-center gap-2">
-            <Link href="/login">
+            <Link href="/auth">
               <Button variant="ghost" className="hidden sm:flex">
                 {t('common.login')}
               </Button>
             </Link>
-            <Link href="/register">
+            <Link href="/auth">
               <Button className="gap-2">
                 {t('common.register')}
                 <ArrowRight className={`w-4 h-4 ${dir === 'rtl' ? 'rotate-180' : ''}`} />

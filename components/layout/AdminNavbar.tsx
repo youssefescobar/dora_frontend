@@ -41,7 +41,7 @@ export function AdminNavbar() {
     deleteCookie('token');
     deleteCookie('role');
     deleteCookie('userName');
-    router.push('/login');
+    router.push('/');
   };
 
   const navItems = [

@@ -60,7 +60,7 @@ export default function LandingPage() {
                 </Button>
               ) : (
                 <>
-                  <Link href="/register">
+                  <Link href="/auth">
                     <Button size="lg" className="h-12 px-8 text-lg gap-2 shadow-lg shadow-primary/20">
                       {t('landing.getStarted')}
                       <ArrowRight className={`w-5 h-5 ${dir === 'rtl' ? 'rotate-180' : ''}`} />
@@ -164,12 +164,12 @@ export default function LandingPage() {
             Join hundreds of operators who trust Dora Care for their pilgrim safety and management needs.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link href="/register">
+            <Link href="/auth">
               <Button size="lg" className="h-14 px-8 text-lg w-full sm:w-auto bg-white text-slate-900 hover:bg-slate-100">
                 {t('landing.getStarted')}
               </Button>
             </Link>
-            <Link href="/login">
+            <Link href="/auth">
               <Button size="lg" variant="ghost" className="h-14 px-8 text-lg w-full sm:w-auto border-slate-700 hover:bg-slate-800 text-white hover:text-white">
                 Contact Sales
               </Button>
@@ -184,7 +184,14 @@ export default function LandingPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold">D</div>
+                <Image
+                  key={Date.now()}
+                  src="/logo.jpeg"
+                  alt="Dora Care Logo"
+                  width={32}
+                  height={32}
+                  className="rounded-lg"
+                />
                 <span className="font-bold text-lg text-slate-900">Dora Care</span>
               </div>
               <p className="text-sm text-slate-500">
