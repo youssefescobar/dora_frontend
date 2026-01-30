@@ -8,15 +8,15 @@ import { getCookie } from 'cookies-next';
 import { useLanguage } from '@/lib/LanguageContext';
 import { LandingNavbar } from '@/components/layout/LandingNavbar';
 import { Button } from '@/components/ui/button';
-import { 
-  Map, 
-  Activity, 
-  Bell, 
-  Watch, 
-  ShieldCheck, 
-  Users, 
-  ArrowRight, 
-  CheckCircle2 
+import {
+  Map,
+  Activity,
+  Bell,
+  Watch,
+  ShieldCheck,
+  Users,
+  ArrowRight,
+  CheckCircle2
 } from 'lucide-react';
 
 export default function LandingPage() {
@@ -43,11 +43,11 @@ export default function LandingPage() {
               <span className="flex h-2 w-2 rounded-full bg-primary mr-2"></span>
               {t('landing.v1Available')}
             </div>
-            
+
             <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
               {t('landing.heroTitle')}
             </h1>
-            
+
             <p className="text-xl text-slate-600 leading-relaxed max-w-2xl mx-auto">
               {t('landing.heroSubtitle')}
             </p>
@@ -76,7 +76,7 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-        
+
         {/* Abstract Background Elements */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-0 opacity-30 pointer-events-none">
           <div className="absolute -top-[20%] -right-[10%] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-primary/30 to-purple-500/30 blur-3xl" />
@@ -116,35 +116,35 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <FeatureCard 
-              icon={Map} 
-              title={t('landing.features.tracking')} 
-              description={t('landing.features.trackingDesc')} 
+            <FeatureCard
+              icon={Map}
+              title={t('landing.features.tracking')}
+              description={t('landing.features.trackingDesc')}
             />
-            <FeatureCard 
-              icon={Activity} 
-              title={t('landing.features.health')} 
-              description={t('landing.features.healthDesc')} 
+            <FeatureCard
+              icon={Activity}
+              title={t('landing.features.health')}
+              description={t('landing.features.healthDesc')}
             />
-            <FeatureCard 
-              icon={Bell} 
-              title={t('landing.features.alerts')} 
-              description={t('landing.features.alertsDesc')} 
+            <FeatureCard
+              icon={Bell}
+              title={t('landing.features.alerts')}
+              description={t('landing.features.alertsDesc')}
             />
-            <FeatureCard 
-              icon={Watch} 
-              title={t('landing.features.hardware')} 
-              description={t('landing.features.hardwareDesc')} 
+            <FeatureCard
+              icon={Watch}
+              title={t('landing.features.hardware')}
+              description={t('landing.features.hardwareDesc')}
             />
-            <FeatureCard 
-              icon={Users} 
-              title={t('landing.features.groupManagement')} 
-              description={t('landing.features.groupManagementDesc')} 
+            <FeatureCard
+              icon={Users}
+              title={t('landing.features.groupManagement')}
+              description={t('landing.features.groupManagementDesc')}
             />
-            <FeatureCard 
-              icon={ShieldCheck} 
-              title={t('landing.features.dataSecurity')} 
-              description={t('landing.features.dataSecurityDesc')} 
+            <FeatureCard
+              icon={ShieldCheck}
+              title={t('landing.features.dataSecurity')}
+              description={t('landing.features.dataSecurityDesc')}
             />
           </div>
         </div>
@@ -153,9 +153,9 @@ export default function LandingPage() {
       {/* CTA Section */}
       <section className="py-24 bg-slate-900 text-white overflow-hidden relative">
         <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
-           <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/40 blur-[100px] rounded-full translate-x-1/3 -translate-y-1/3" />
+          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/40 blur-[100px] rounded-full translate-x-1/3 -translate-y-1/3" />
         </div>
-        
+
         <div className="container mx-auto px-4 relative z-10 text-center">
           <h2 className="text-3xl font-bold sm:text-4xl mb-6">
             {t('landing.cta.title')}
@@ -187,18 +187,18 @@ export default function LandingPage() {
                 <Image
                   key={Date.now()}
                   src="/logo.jpeg"
-                  alt="Dora Care Logo"
+                  alt="Durra Care Logo"
                   width={32}
                   height={32}
                   className="rounded-lg"
                 />
-                <span className="font-bold text-lg text-slate-900">Dora Care</span>
+                <span className="font-bold text-lg text-slate-900">Durra Care</span>
               </div>
               <p className="text-sm text-slate-500">
                 {t('landing.footer.tagline')}
               </p>
             </div>
-            
+
             <div>
               <h4 className="font-semibold text-slate-900 mb-4">{t('landing.footer.product')}</h4>
               <ul className="space-y-2 text-sm text-slate-600">
@@ -207,7 +207,7 @@ export default function LandingPage() {
                 <li><Link href="#" className="hover:text-primary">{t('landing.footer.pricingLink')}</Link></li>
               </ul>
             </div>
-            
+
             <div>
               <h4 className="font-semibold text-slate-900 mb-4">{t('landing.footer.company')}</h4>
               <ul className="space-y-2 text-sm text-slate-600">
@@ -226,7 +226,7 @@ export default function LandingPage() {
               </ul>
             </div>
           </div>
-          
+
           <div className="pt-8 border-t flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-slate-500">
             <p>© {new Date().getFullYear()} {t('landing.footer.copyright')}</p>
             <div className="flex gap-6">

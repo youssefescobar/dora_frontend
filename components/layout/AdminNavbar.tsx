@@ -6,12 +6,12 @@ import { useRouter, usePathname } from 'next/navigation';
 import { deleteCookie, getCookie } from 'cookies-next';
 import { useLanguage } from '@/lib/LanguageContext';
 import { Button } from '@/components/ui/button';
-import { 
-  Languages, 
-  LogOut, 
-  Users, 
-  Radio, 
-  Layers, 
+import {
+  Languages,
+  LogOut,
+  Users,
+  Radio,
+  Layers,
   BarChart,
   Menu
 } from 'lucide-react';
@@ -31,7 +31,7 @@ export function AdminNavbar() {
   const router = useRouter();
   const pathname = usePathname();
   const [userName, setUserName] = useState('Admin');
-  
+
   useEffect(() => {
     const name = getCookie('userName') as string;
     if (name) setUserName(name);
@@ -57,7 +57,7 @@ export function AdminNavbar() {
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push('/admin')}>
           <Image
             src="/logo.jpeg"
-            alt="Dora Care Logo"
+            alt="Durra Care Logo"
             width={32}
             height={32}
             className="rounded-lg"
@@ -71,11 +71,11 @@ export function AdminNavbar() {
         <div className="hidden md:flex items-center gap-1 mx-4">
           {navItems.map((item) => (
             <Link key={item.href} href={item.href}>
-                              <Button 
-                                variant={pathname.startsWith(item.href) ? "secondary" : "ghost"} 
-                                size="sm"
-                                className={cn("gap-2", pathname.startsWith(item.href) && "bg-slate-100 text-primary")}
-                              >                <item.icon className="w-4 h-4" />
+              <Button
+                variant={pathname.startsWith(item.href) ? "secondary" : "ghost"}
+                size="sm"
+                className={cn("gap-2", pathname.startsWith(item.href) && "bg-slate-100 text-primary")}
+              >                <item.icon className="w-4 h-4" />
                 {item.label}
               </Button>
             </Link>
@@ -134,8 +134,8 @@ export function AdminNavbar() {
               <div className="flex flex-col gap-4 mt-8">
                 {navItems.map((item) => (
                   <Link key={item.href} href={item.href}>
-                    <Button 
-                      variant={pathname.startsWith(item.href) ? "secondary" : "ghost"} 
+                    <Button
+                      variant={pathname.startsWith(item.href) ? "secondary" : "ghost"}
                       className="w-full justify-start gap-2"
                     >
                       <item.icon className="w-4 h-4" />

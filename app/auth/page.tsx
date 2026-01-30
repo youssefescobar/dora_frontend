@@ -113,7 +113,7 @@ export default function AuthPage() {
       <div
         className={`transition-opacity duration-300 ${isLoginView ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}
       >
-        <Image key="logo-login" src="/logo.jpeg" alt="Dora Care" width={64} height={64} className="mx-auto" />
+        <Image key="logo-login" src="/logo.jpeg" alt="Durra Care" width={64} height={64} className="mx-auto" />
         <div className="grid gap-2 text-center">
           <h1 className="text-3xl font-bold">{t('auth.welcomeBack')}</h1>
           <p className="text-balance text-muted-foreground">{t('auth.signInToAccount')}</p>
@@ -142,7 +142,7 @@ export default function AuthPage() {
       <div
         className={`transition-opacity duration-300 ${!isLoginView ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}
       >
-        <Image key="logo-register" src="/logo.jpeg" alt="Dora Care" width={64} height={64} className="mx-auto" />
+        <Image key="logo-register" src="/logo.jpeg" alt="Durra Care" width={64} height={64} className="mx-auto" />
         <div className="grid gap-2 text-center">
           <h1 className="text-3xl font-bold">{t('auth.createAccount')}</h1>
           <p className="text-balance text-muted-foreground">{t('auth.registerModerator')}</p>

@@ -23,7 +23,7 @@ export function LandingNavbar() {
           <Image
             key={Date.now()}
             src="/logo.jpeg"
-            alt="Dora Care Logo"
+            alt="Durra Care Logo"
             width={40}
             height={40}
             className="rounded-lg shadow-sm"

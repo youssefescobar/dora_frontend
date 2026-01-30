@@ -67,7 +67,7 @@ export function DashboardNavbar() {
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push('/dashboard')}>
           <Image
             src="/logo.jpeg"
-            alt="Dora Care Logo"
+            alt="Durra Care Logo"
             width={32}
             height={32}
             className="rounded-lg"
