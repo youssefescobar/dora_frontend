@@ -18,7 +18,11 @@ import {
 import { toast } from 'sonner';
 import { useLanguage } from '@/lib/LanguageContext';
 import apiClient from '@/lib/api';
-import { MapComponent } from '@/components/ui/MapComponent';
+import dynamic from 'next/dynamic';
+const MapComponent = dynamic(
+  () => import('@/components/ui/MapComponent').then((mod) => mod.MapComponent),
+  { ssr: false }
+);
 import { DashboardNavbar } from '@/components/layout/DashboardNavbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -173,6 +177,17 @@ export default function GroupDetailsPage() {
 
   useEffect(() => {
     fetchGroupDetails();
+
+    const intervalId = setInterval(() => {
+      // Silent refresh logic - avoiding full page loader
+      apiClient.get(`/groups/${id}`).then(response => {
+        if (response.data) {
+          setGroup(response.data);
+        }
+      }).catch(err => console.error("Auto-refresh group failed", err));
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(intervalId);
   }, [id]);
 
   const addPilgrimToGroup = async (pilgrimId: string) => {
@@ -629,45 +644,54 @@ export default function GroupDetailsPage() {
           </div>
 
           <div className="w-full lg:w-96 space-y-6">
-            <Card className="overflow-hidden">
-              <CardHeader className="bg-slate-900 text-white">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <MapIcon className="w-5 h-5 text-primary" />
-                  {t('dashboard.liveTracking')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="h-80 bg-slate-100 flex flex-col items-center justify-center text-slate-500 relative overflow-hidden">
-                  <MapComponent
-                    markers={
-                      (group?.pilgrims || [])
-                        .filter((p: any) => p.band_info?.last_location?.lat && p.band_info?.last_location?.lng)
-                        .map((p: any) => ({
-                          lat: p.band_info.last_location.lat,
-                          lng: p.band_info.last_location.lng,
-                          popupText: p.full_name
-                        }))
-                    }
-                  />
-                </div>
-                <div className="p-4 bg-white border-t">
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-semibold">{language === 'ar' ? 'إحصائيات المواقع' : 'Location Stats'}</h4>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">{language === 'ar' ? 'متصل' : 'Connected'}</span>
-                      <span className="font-bold text-green-600">
-                        {(group?.pilgrims || []).filter((p: any) => p.band_info?.last_location).length}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">{language === 'ar' ? 'غير متصل' : 'Offline'}</span>
-                      <span className="font-bold text-slate-400">
-                        {(group?.pilgrims || []).length - (group?.pilgrims || []).filter((p: any) => p.band_info?.last_location).length}
-                      </span>
-                    </div>
+            <Card className="h-[500px] relative overflow-hidden shadow-xl border-0 ring-1 ring-slate-900/5 group">
+              <div className="absolute inset-0 z-0 h-full w-full">
+                <MapComponent
+                  markers={
+                    (group?.pilgrims || [])
+                      .filter((p: any) => p.band_info?.last_location?.lat && p.band_info?.last_location?.lng)
+                      .map((p: any) => ({
+                        lat: p.band_info.last_location.lat,
+                        lng: p.band_info.last_location.lng,
+                        popupText: p.full_name
+                      }))
+                  }
+                />
+              </div>
+
+              {/* Header Overlay */}
+              <div className="absolute top-4 right-4 z-[1000] pointer-events-none">
+                <div className="bg-white/90 backdrop-blur-md shadow-sm border border-slate-200/50 rounded-xl px-4 py-2 flex items-center gap-3 pointer-events-auto transition-all hover:bg-white/95">
+                  <div className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-slate-800 text-sm leading-none">{t('dashboard.liveTracking')}</span>
+                    <span className="text-[10px] text-muted-foreground leading-none mt-1">
+                      {language === 'ar' ? 'تحديث مباشر' : 'Real-time updates'}
+                    </span>
                   </div>
                 </div>
-              </CardContent>
+              </div>
+
+              {/* Stats Footer Overlay */}
+              <div className="absolute bottom-4 left-4 right-4 z-[1000] pointer-events-none">
+                <div className="bg-white/90 backdrop-blur-md shadow-sm border border-slate-200/50 rounded-xl p-3 grid grid-cols-2 gap-4 pointer-events-auto transition-all hover:bg-white/95">
+                  <div className="flex flex-col items-center justify-center border-r border-slate-200/50">
+                    <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-1">{language === 'ar' ? 'متصل' : 'Connected'}</span>
+                    <span className="text-xl font-bold text-green-600 leading-none">
+                      {(group?.pilgrims || []).filter((p: any) => p.band_info?.last_location).length}
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-center justify-center">
+                    <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-1">{language === 'ar' ? 'غير متصل' : 'Offline'}</span>
+                    <span className="text-xl font-bold text-slate-400 leading-none">
+                      {(group?.pilgrims || []).length - (group?.pilgrims || []).filter((p: any) => p.band_info?.last_location).length}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </Card>
           </div>
         </div>

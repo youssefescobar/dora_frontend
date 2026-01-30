@@ -3,7 +3,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ChevronLeft, Loader2, User, Activity, Watch, Smartphone, Mail, CreditCard, Battery } from 'lucide-react';
-import { MapComponent } from '@/components/ui/MapComponent';
+import dynamic from 'next/dynamic';
+const MapComponent = dynamic(
+  () => import('@/components/ui/MapComponent').then((mod) => mod.MapComponent),
+  { ssr: false }
+);
 import { toast } from 'sonner';
 import { useLanguage } from '@/lib/LanguageContext';
 import apiClient from '@/lib/api';
@@ -65,7 +69,7 @@ export default function PilgrimDetailsPage() {
             setPilgrim(response.data);
           }
         }).catch(err => console.error("Auto-refresh failed", err));
-      }, 10000); // 10 seconds
+      }, 30000); // 30 seconds
 
       return () => clearInterval(intervalId);
     }
