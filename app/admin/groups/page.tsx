@@ -45,6 +45,8 @@ interface Band {
   _id: string;
   serial_number: string;
   imei: string;
+  status: 'active' | 'inactive' | 'maintenance';
+  battery_percent?: number; // Added optional property
 }
 
 export default function GroupsPage() {
