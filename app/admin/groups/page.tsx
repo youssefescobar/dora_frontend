@@ -2,14 +2,16 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Loader2, 
-  ChevronLeft, 
-  ChevronRight, 
-  Users, 
+import {
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  Users,
   Calendar,
   Shield,
-  Trash2
+  Trash2,
+  Watch,
+  Unlink
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/lib/LanguageContext';
@@ -36,6 +38,13 @@ interface Group {
   };
   moderator_ids: string[];
   created_at: string;
+  available_band_ids?: Band[];
+}
+
+interface Band {
+  _id: string;
+  serial_number: string;
+  imei: string;
 }
 
 export default function GroupsPage() {
@@ -48,6 +57,100 @@ export default function GroupsPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  // Assign Bands State
+  const [isAssignBandDialogOpen, setIsAssignBandDialogOpen] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  const [availableBands, setAvailableBands] = useState<Band[]>([]);
+  const [selectedBandIds, setSelectedBandIds] = useState<string[]>([]);
+  const [assigningBands, setAssigningBands] = useState(false);
+
+  // Unassign Bands State
+  const [isUnassignBandDialogOpen, setIsUnassignBandDialogOpen] = useState(false);
+  const [selectedBandsToUnassign, setSelectedBandsToUnassign] = useState<string[]>([]);
+  const [unassigningBands, setUnassigningBands] = useState(false);
+
+  const handleAssignBands = async () => {
+    if (!selectedGroup || selectedBandIds.length === 0) return;
+    try {
+      setAssigningBands(true);
+      await apiClient.post(`/admin/groups/${selectedGroup._id}/assign-bands`, { band_ids: selectedBandIds });
+      toast.success('Bands assigned successfully');
+      setIsAssignBandDialogOpen(false);
+      setSelectedGroup(null);
+      setSelectedBandIds([]);
+      fetchGroups(); // Refresh groups to reflect the change
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        toast.error(error.response.data.error || t('common.error'));
+      } else {
+        toast.error(t('common.error'));
+      }
+    } finally {
+      setAssigningBands(false);
+    }
+  };
+
+  const openAssignBandDialog = async (group: Group) => {
+    setSelectedGroup(group);
+    setIsAssignBandDialogOpen(true);
+    try {
+      // Fetch all globally unassigned bands (not assigned to any pilgrim) AND not assigned to any group
+      const response = await apiClient.get(`/hardware/bands`, { params: { status: 'active', exclude_assigned_to_groups: 'true' } });
+      if (response.data.success && response.data.data) {
+        // Filter to show only unassigned bands (current_user_id is null)
+        const unassignedBands = response.data.data.filter((band: any) => !band.current_user_id);
+        setAvailableBands(unassignedBands);
+      } else if (response.data.data) {
+        // Handle case where response is direct array instead of wrapped in success
+        const unassignedBands = response.data.data.filter((band: any) => !band.current_user_id);
+        setAvailableBands(unassignedBands);
+      } else {
+        setAvailableBands([]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch available bands:', error);
+      toast.error('Failed to fetch available bands for assignment');
+      setAvailableBands([]);
+    }
+  };
+
+  const handleUnassignBands = async () => {
+    if (!selectedGroup || selectedBandsToUnassign.length === 0) return;
+    try {
+      setUnassigningBands(true);
+      await apiClient.post(`/admin/groups/${selectedGroup._id}/unassign-bands`, { band_ids: selectedBandsToUnassign });
+      toast.success('Bands unassigned successfully');
+      setIsUnassignBandDialogOpen(false);
+      setSelectedGroup(null);
+      setSelectedBandsToUnassign([]);
+      fetchGroups(); // Refresh groups to reflect the change
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        toast.error(error.response.data.error || t('common.error'));
+      } else {
+        toast.error(t('common.error'));
+      }
+    } finally {
+      setUnassigningBands(false);
+    }
+  };
+
+  const openUnassignBandDialog = async (group: Group) => {
+    setSelectedGroup(group);
+    setIsUnassignBandDialogOpen(true);
+    try {
+      // Fetch the full details of the selected group to get populated available_band_ids
+      const response = await apiClient.get(`/groups/${group._id}`);
+      if (response.data && response.data.available_band_ids) {
+        setAvailableBands(response.data.available_band_ids);
+      } else {
+        setAvailableBands([]);
+      }
+    } catch (error) {
+      toast.error('Failed to fetch assigned bands for group');
+    }
+  };
 
   const fetchGroups = useCallback(async () => {
     try {
@@ -72,7 +175,7 @@ export default function GroupsPage() {
     if (!deleteId) return;
     try {
       setDeleting(true);
-      await apiClient.delete(`/admin/groups/${deleteId}`); // Admin can delete any group via this endpoint usually, or uses same endpoint
+      await apiClient.delete(`/admin/groups/${deleteId}`);
       toast.success('Group deleted successfully');
       setDeleteId(null);
       setIsDeleteDialogOpen(false);
@@ -121,6 +224,12 @@ export default function GroupsPage() {
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 <div className="flex items-center gap-2 text-muted-foreground">
+                  <Watch className="w-4 h-4 text-green-600" />
+                  <span>
+                    {group.available_band_ids?.length || 0} Bands Available
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
                   <Shield className="w-4 h-4 text-primary" />
                   <span className="truncate">
                     Created by: <span className="font-medium text-foreground">{group.created_by?.full_name || 'Unknown'}</span>
@@ -140,17 +249,33 @@ export default function GroupsPage() {
                 </div>
               </CardContent>
               <CardFooter className="pt-2 border-t flex justify-end gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openAssignBandDialog(group)}
+                >
+                  <Watch className="w-4 h-4 mr-2" />
+                  Assign
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openUnassignBandDialog(group)}
+                >
+                  <Unlink className="w-4 h-4 mr-2" />
+                  Unassign
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => router.push(`/dashboard/groups/${group._id}`)}
                 >
-                  View Details
+                  Details
                 </Button>
-                
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
+
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className="text-destructive hover:bg-destructive/10"
                   onClick={() => {
                     setDeleteId(group._id);
@@ -165,6 +290,103 @@ export default function GroupsPage() {
         </div>
       )}
 
+      {/* Assign Bands Dialog */}
+      <Dialog open={isAssignBandDialogOpen} onOpenChange={setIsAssignBandDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Bands to {selectedGroup?.group_name}</DialogTitle>
+            <DialogDescription>Select bands to make them available for this group.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4 max-h-96 overflow-y-auto">
+            {availableBands.length > 0 ? (
+              availableBands.map((band, index) => {
+                const bandId = band._id || String(index);
+                return (
+                  <div key={bandId} className="flex items-center justify-between p-2 border-b">
+                    <label htmlFor={`band-${bandId}`} className="flex items-center gap-3 cursor-pointer w-full">
+                      <input
+                        type="checkbox"
+                        id={`band-${bandId}`}
+                        checked={selectedBandIds.includes(band._id)}
+                        onChange={() => {
+                          setSelectedBandIds(prev =>
+                            prev.includes(band._id)
+                              ? prev.filter(id => id !== band._id)
+                              : [...prev, band._id]
+                          );
+                        }}
+                        className="w-4 h-4"
+                      />
+                      <div>
+                        <p className="font-medium">{band.serial_number}</p>
+                        <p className="text-sm text-muted-foreground">IMEI: {band.imei}</p>
+                      </div>
+                    </label>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="text-muted-foreground text-sm">No available bands to assign.</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAssignBandDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleAssignBands} disabled={assigningBands || selectedBandIds.length === 0}>
+              {assigningBands ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Assign Selected'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Unassign Bands Dialog */}
+      <Dialog open={isUnassignBandDialogOpen} onOpenChange={setIsUnassignBandDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Unassign Bands from {selectedGroup?.group_name}</DialogTitle>
+            <DialogDescription>Select bands to remove them from this group.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4 max-h-96 overflow-y-auto">
+            {availableBands.length > 0 ? (
+              availableBands.map((band: Band, index: number) => {
+                const bandId = band._id || String(index);
+                return (
+                  <div key={bandId} className="flex items-center justify-between p-2 border-b">
+                    <label htmlFor={`unassign-band-${bandId}`} className="flex items-center gap-3 cursor-pointer w-full">
+                      <input
+                        type="checkbox"
+                        id={`unassign-band-${bandId}`}
+                        checked={selectedBandsToUnassign.includes(band._id)}
+                        onChange={() => {
+                          setSelectedBandsToUnassign(prev =>
+                            prev.includes(band._id)
+                              ? prev.filter(id => id !== band._id)
+                              : [...prev, band._id]
+                          );
+                        }}
+                        className="w-4 h-4"
+                      />
+                      <div>
+                        <p className="font-medium">{band.serial_number}</p>
+                        <p className="text-sm text-muted-foreground">IMEI: {band.imei}</p>
+                      </div>
+                    </label>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="text-muted-foreground text-sm">No bands assigned to this group.</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsUnassignBandDialogOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleUnassignBands} disabled={unassigningBands || selectedBandsToUnassign.length === 0}>
+              {unassigningBands ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Unassign Selected'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -182,6 +404,7 @@ export default function GroupsPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center space-x-2 p-4">
           <Button

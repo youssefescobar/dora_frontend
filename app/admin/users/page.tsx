@@ -85,8 +85,9 @@ export default function UsersPage() {
   const handleAction = async (action: string, userId: string) => {
     try {
       let endpoint = '';
-      if (action === 'promote') endpoint = '/admin/users/promote';
-      if (action === 'demote') endpoint = '/admin/users/demote';
+      if (action === 'promote') endpoint = '/admin/users/promote-to-admin';
+      if (action === 'demote') endpoint = '/admin/users/demote-to-moderator';
+      if (action === 'demote-to-pilgrim') endpoint = '/admin/users/demote-to-pilgrim';
       if (action === 'deactivate') endpoint = '/admin/users/deactivate';
       if (action === 'activate') endpoint = '/admin/users/activate';
 
@@ -196,7 +197,7 @@ export default function UsersPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        {user.role !== 'admin' && (
+                        {user.role === 'moderator' && (
                           <DropdownMenuItem onClick={() => handleAction('promote', user._id)}>
                             <Shield className="mr-2 h-4 w-4 text-purple-600" />
                             {t('admin.promote')}
@@ -206,6 +207,12 @@ export default function UsersPage() {
                           <DropdownMenuItem onClick={() => handleAction('demote', user._id)}>
                             <ShieldAlert className="mr-2 h-4 w-4 text-orange-600" />
                             {t('admin.demote')}
+                          </DropdownMenuItem>
+                        )}
+                        {user.role === 'moderator' && (
+                          <DropdownMenuItem onClick={() => handleAction('demote-to-pilgrim', user._id)}>
+                            <ShieldAlert className="mr-2 h-4 w-4 text-orange-600" />
+                            Demote to Pilgrim
                           </DropdownMenuItem>
                         )}
                         {user.active ? (

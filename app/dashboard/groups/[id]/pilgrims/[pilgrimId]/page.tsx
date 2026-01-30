@@ -57,6 +57,17 @@ export default function PilgrimDetailsPage() {
 
     if (id && pilgrimId) {
       fetchPilgrimDetails();
+
+      const intervalId = setInterval(() => {
+        // Silent refresh (loading state not set to true)
+        apiClient.get(`/auth/pilgrims/${pilgrimId}`).then(response => {
+          if (response.data) {
+            setPilgrim(response.data);
+          }
+        }).catch(err => console.error("Auto-refresh failed", err));
+      }, 10000); // 10 seconds
+
+      return () => clearInterval(intervalId);
     }
   }, [id, pilgrimId, language, router, t]);
 
@@ -76,11 +87,11 @@ export default function PilgrimDetailsPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <DashboardNavbar />
-      
+
       <main className="container mx-auto p-4 py-8">
-        <Button 
-          variant="ghost" 
-          onClick={() => router.push(`/dashboard/groups/${id}`)} 
+        <Button
+          variant="ghost"
+          onClick={() => router.push(`/dashboard/groups/${id}`)}
           className="mb-4 gap-2"
         >
           <ChevronLeft className={`w-4 h-4 ${dir === 'rtl' ? 'rotate-180' : ''}`} />
@@ -98,8 +109,8 @@ export default function PilgrimDetailsPage() {
                   {groupName}
                 </p>
               </div>
-              <Badge 
-                variant="secondary" 
+              <Badge
+                variant="secondary"
                 className={`text-sm px-3 py-1 ${pilgrim.band_info ? "bg-green-100 text-green-700 hover:bg-green-100" : ""}`}
               >
                 {pilgrim.band_info ? (language === 'ar' ? 'متصل' : 'Connected') : (language === 'ar' ? 'غير متصل' : 'Offline')}
@@ -118,7 +129,7 @@ export default function PilgrimDetailsPage() {
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">{t('common.email')}</CardTitle>
@@ -166,8 +177,8 @@ export default function PilgrimDetailsPage() {
                     </span>
                   </div>
                   <div className="flex items-center justify-between py-2">
-                     <span className="text-muted-foreground">{language === 'ar' ? 'IMEI' : 'IMEI'}</span>
-                     <span className="font-mono text-sm">{pilgrim.band_info.imei || 'N/A'}</span>
+                    <span className="text-muted-foreground">{language === 'ar' ? 'IMEI' : 'IMEI'}</span>
+                    <span className="font-mono text-sm">{pilgrim.band_info.imei || 'N/A'}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -177,23 +188,23 @@ export default function PilgrimDetailsPage() {
           {/* Right Column: Map */}
           <div className="w-full lg:w-[450px] space-y-6">
             <Card className="overflow-hidden h-full min-h-[500px] flex flex-col">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Watch className="w-5 h-5 text-primary" />
-                {t('dashboard.lastLocation')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 flex-1 relative bg-slate-100">
-              {pilgrim.band_info?.last_location ? (
-                <MapComponent latitude={pilgrim.band_info.last_location.lat} longitude={pilgrim.band_info.last_location.lng} popupText={pilgrim.full_name} />
-              ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 p-8 text-center">
-                  <Watch className="w-16 h-16 mb-4 opacity-20" />
-                  <p>{language === 'ar' ? 'لم يتم استلام أي بيانات للموقع بعد' : 'No location data received yet'}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Watch className="w-5 h-5 text-primary" />
+                  {t('dashboard.lastLocation')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0 flex-1 relative bg-slate-100">
+                {pilgrim.band_info?.last_location ? (
+                  <MapComponent latitude={pilgrim.band_info.last_location.lat} longitude={pilgrim.band_info.last_location.lng} popupText={pilgrim.full_name} />
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 p-8 text-center">
+                    <Watch className="w-16 h-16 mb-4 opacity-20" />
+                    <p>{language === 'ar' ? 'لم يتم استلام أي بيانات للموقع بعد' : 'No location data received yet'}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
       </main>

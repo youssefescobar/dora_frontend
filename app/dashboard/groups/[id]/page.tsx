@@ -2,12 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { 
-  ChevronLeft, 
-  Plus, 
-  Watch, 
-  UserPlus, 
-  Map as MapIcon, 
+import {
+  ChevronLeft,
+  Plus,
+  Watch,
+  UserPlus,
+  Map as MapIcon,
   Search,
   Loader2,
   Trash2,
@@ -51,7 +51,7 @@ export default function GroupDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [isEditingGroupName, setIsEditingGroupName] = useState(false);
   const [editedGroupName, setEditedGroupName] = useState('');
-  
+
   // Pilgrim Registration State
   const [isRegDialogOpen, setIsRegDialogOpen] = useState(false);
   const [currentPilgrimDialogTab, setCurrentPilgrimDialogTab] = useState<'register' | 'search'>('register');
@@ -103,14 +103,14 @@ export default function GroupDetailsPage() {
 
   const fetchAvailableBands = async () => {
     try {
-      const response = await apiClient.get('/hardware/bands', { params: { status: 'active', limit: 100 } });
+      // Use the new endpoint to get available bands for the specific group
+      const response = await apiClient.get(`/groups/${id}/available-bands`);
       if (response.data.success) {
-        // Filter bands that are not assigned to any user
-        const unassigned = response.data.data.filter((b: any) => !b.current_user_id);
-        setAvailableBands(unassigned);
+        setAvailableBands(response.data.data);
       }
     } catch (error) {
-      console.error('Failed to fetch bands', error);
+      console.error('Failed to fetch available bands for group', error);
+      toast.error(language === 'ar' ? 'فشل في جلب الأساور المتاحة' : 'Failed to fetch available bands');
     }
   };
 
@@ -174,10 +174,20 @@ export default function GroupDetailsPage() {
     fetchGroupDetails();
   }, [id]);
 
+  const addPilgrimToGroup = async (pilgrimId: string) => {
+    try {
+      await apiClient.post(`/groups/${id}/add-pilgrim`, { user_id: pilgrimId });
+      toast.success(language === 'ar' ? 'تمت إضافة الحاج بنجاح' : 'Pilgrim added successfully');
+      fetchGroupDetails();
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || t('common.error'));
+    }
+  };
+
   const handleRegisterPilgrim = async () => {
     try {
       setRegistering(true);
-      
+
       // Filter out empty email
       const pilgrimData = { ...newPilgrim };
       if (!pilgrimData.email.trim()) {
@@ -186,14 +196,12 @@ export default function GroupDetailsPage() {
 
       const res = await apiClient.post('/auth/register-pilgrim', pilgrimData);
       const pilgrimId = res.data.pilgrim_id;
-      
+
       // After registering, add to group
-      await apiClient.post(`/groups/${id}/add-pilgrim`, { user_id: pilgrimId });
-      
-      toast.success(language === 'ar' ? 'تمت إضافة الحاج بنجاح' : 'Pilgrim added successfully');
+      await addPilgrimToGroup(pilgrimId);
+
       setIsRegDialogOpen(false);
       setNewPilgrim({ full_name: '', national_id: '', medical_history: '', email: '' });
-      fetchGroupDetails();
     } catch (error: any) {
       toast.error(error.response?.data?.errors?.[0] || error.response?.data?.error || t('common.error'));
     } finally {
@@ -204,12 +212,10 @@ export default function GroupDetailsPage() {
   const handleAddExistingPilgrim = async (pilgrimId: string) => {
     try {
       setRegistering(true); // Re-using registering state for adding existing pilgrim
-      await apiClient.post(`/groups/${id}/add-pilgrim`, { user_id: pilgrimId });
-      toast.success(language === 'ar' ? 'تمت إضافة الحاج الموجود بنجاح' : 'Existing pilgrim added successfully');
+      await addPilgrimToGroup(pilgrimId);
       setIsRegDialogOpen(false);
       setSearchPilgrimTerm('');
       setFoundPilgrims([]);
-      fetchGroupDetails();
     } catch (error: any) {
       toast.error(error.response?.data?.error || t('common.error'));
     } finally {
@@ -222,9 +228,10 @@ export default function GroupDetailsPage() {
       setAssigning(true);
       await apiClient.post('/groups/assign-band', {
         serial_number: serialNumber,
-        user_id: selectedPilgrimId
+        user_id: selectedPilgrimId,
+        group_id: id
       });
-      
+
       toast.success(language === 'ar' ? 'تم ربط السوار بنجاح' : 'Band assigned successfully');
       setIsBandDialogOpen(false);
       setSerialNumber('');
@@ -239,7 +246,10 @@ export default function GroupDetailsPage() {
   const handleUnassignBand = async (pilgrimId: string) => {
     try {
       setAssigning(true); // Re-using assigning state for unassigning
-      await apiClient.post('/groups/unassign-band', { user_id: pilgrimId });
+      await apiClient.post('/groups/unassign-band', {
+        user_id: pilgrimId,
+        group_id: id
+      });
       toast.success(language === 'ar' ? 'تم إلغاء ربط السوار بنجاح' : 'Band unassigned successfully');
       fetchGroupDetails();
     } catch (error: any) {
@@ -288,7 +298,7 @@ export default function GroupDetailsPage() {
           message_text: notificationMessage
         });
       }
-      
+
       toast.success(language === 'ar' ? 'تم إرسال التنبيه بنجاح' : 'Alert sent successfully');
       setIsNotiDialogOpen(false);
       setNotificationMessage('');
@@ -314,11 +324,11 @@ export default function GroupDetailsPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <DashboardNavbar />
-      
+
       <main className="container mx-auto p-4 py-8">
-        <Button 
-          variant="ghost" 
-          onClick={() => router.push('/dashboard')} 
+        <Button
+          variant="ghost"
+          onClick={() => router.push('/dashboard')}
           className="mb-4 gap-2"
         >
           <ChevronLeft className={`w-4 h-4 ${dir === 'rtl' ? 'rotate-180' : ''}`} />
@@ -363,10 +373,10 @@ export default function GroupDetailsPage() {
                   {group?.pilgrims.length} {t('dashboard.pilgrims')} {language === 'ar' ? 'مسجلين' : 'registered'}
                 </p>
               </div>
-              
+
               <div className="flex gap-2 flex-wrap">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
                   onClick={() => {
                     setItemToDelete({ type: 'group', id: group._id });
@@ -377,8 +387,8 @@ export default function GroupDetailsPage() {
                   {language === 'ar' ? 'حذف المجموعة' : 'Delete Group'}
                 </Button>
 
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                   onClick={() => {
                     setNotificationTarget({ type: 'group', id: group._id, name: group.group_name });
@@ -437,26 +447,26 @@ export default function GroupDetailsPage() {
                       <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
                           <Label htmlFor="full_name_reg">{t('common.fullName')}</Label>
-                          <Input 
-                            id="full_name_reg" 
+                          <Input
+                            id="full_name_reg"
                             value={newPilgrim.full_name}
-                            onChange={e => setNewPilgrim({...newPilgrim, full_name: e.target.value})}
+                            onChange={e => setNewPilgrim({ ...newPilgrim, full_name: e.target.value })}
                           />
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor="national_id_reg">{language === 'ar' ? 'رقم الهوية' : 'National ID'}</Label>
-                          <Input 
-                            id="national_id_reg" 
+                          <Input
+                            id="national_id_reg"
                             value={newPilgrim.national_id}
-                            onChange={e => setNewPilgrim({...newPilgrim, national_id: e.target.value})}
+                            onChange={e => setNewPilgrim({ ...newPilgrim, national_id: e.target.value })}
                           />
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor="medical_reg">{language === 'ar' ? 'التاريخ الطبي' : 'Medical History'}</Label>
-                          <Input 
-                            id="medical_reg" 
+                          <Input
+                            id="medical_reg"
                             value={newPilgrim.medical_history}
-                            onChange={e => setNewPilgrim({...newPilgrim, medical_history: e.target.value})}
+                            onChange={e => setNewPilgrim({ ...newPilgrim, medical_history: e.target.value })}
                           />
                         </div>
                         <div className="grid gap-2">
@@ -464,11 +474,11 @@ export default function GroupDetailsPage() {
                             {t('common.email')}
                             <span className="text-xs font-normal text-muted-foreground">{t('common.optional')}</span>
                           </Label>
-                          <Input 
-                            id="email_reg" 
+                          <Input
+                            id="email_reg"
                             type="email"
                             value={newPilgrim.email}
-                            onChange={e => setNewPilgrim({...newPilgrim, email: e.target.value})}
+                            onChange={e => setNewPilgrim({ ...newPilgrim, email: e.target.value })}
                             placeholder="example@email.com"
                           />
                         </div>
@@ -545,7 +555,7 @@ export default function GroupDetailsPage() {
                     {group?.pilgrims.map((pilgrim: any) => (
                       <TableRow key={pilgrim._id} className="group">
                         <TableCell className="font-medium">
-                          <button 
+                          <button
                             onClick={() => router.push(`/dashboard/groups/${id}/pilgrims/${pilgrim._id}`)}
                             className="hover:underline text-left"
                           >
@@ -569,9 +579,9 @@ export default function GroupDetailsPage() {
                               </Button>
                             </div>
                           ) : (
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
+                            <Button
+                              variant="outline"
+                              size="sm"
                               className="h-7 text-xs gap-1"
                               onClick={() => {
                                 setSelectedPilgrimId(pilgrim._id);
@@ -585,9 +595,9 @@ export default function GroupDetailsPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                               onClick={() => {
                                 setNotificationTarget({ type: 'pilgrim', id: pilgrim._id, name: pilgrim.full_name });
@@ -596,9 +606,9 @@ export default function GroupDetailsPage() {
                             >
                               <Bell className="w-4 h-4" />
                             </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                               onClick={() => {
                                 setItemToDelete({ type: 'pilgrim', id: pilgrim._id });
@@ -630,8 +640,8 @@ export default function GroupDetailsPage() {
                   <MapIcon className="w-12 h-12 mb-2 opacity-20" />
                   <p className="text-sm font-medium">Interactive Map Integration</p>
                   <p className="text-xs opacity-60 px-8 text-center mt-2">
-                    {language === 'ar' 
-                      ? 'يتم عرض مواقع الحجاج المباشرة هنا عند ربط الأساور' 
+                    {language === 'ar'
+                      ? 'يتم عرض مواقع الحجاج المباشرة هنا عند ربط الأساور'
                       : 'Live pilgrim locations will appear here once bands are assigned'}
                   </p>
                 </div>
@@ -671,7 +681,7 @@ export default function GroupDetailsPage() {
             <Label htmlFor="serial">{language === 'ar' ? 'رقم السوار (Serial)' : 'Band Serial Number'}</Label>
             {availableBands.length > 0 ? (
               <select
-                id="serial" 
+                id="serial"
                 value={serialNumber}
                 onChange={e => setSerialNumber(e.target.value)}
                 className="mt-2 flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
@@ -685,7 +695,7 @@ export default function GroupDetailsPage() {
               </select>
             ) : (
               <div className="mt-2 text-sm text-muted-foreground p-2 border rounded bg-slate-50">
-                {language === 'ar' ? 'لا توجد أساور متاحة' : 'No available bands found. Please register new bands in the Admin Dashboard.'}
+                {language === 'ar' ? 'لا توجد أساور متاحة. يرجى طلب من مسؤول النظام تعيينها لك.' : 'No available bands found. Please ask an admin to assign them to you.'}
               </div>
             )}
           </div>
@@ -726,8 +736,8 @@ export default function GroupDetailsPage() {
           <DialogHeader>
             <DialogTitle>{t('dashboard.sendAlert')}</DialogTitle>
             <DialogDescription>
-              {language === 'ar' 
-                ? `إرسال تنبيه إلى ${notificationTarget?.name || 'المجموعة'}` 
+              {language === 'ar'
+                ? `إرسال تنبيه إلى ${notificationTarget?.name || 'المجموعة'}`
                 : `Send alert to ${notificationTarget?.name || 'the group'}`}
             </DialogDescription>
           </DialogHeader>

@@ -22,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
@@ -130,6 +130,7 @@ export function AdminNavbar() {
               </Button>
             </SheetTrigger>
             <SheetContent side={dir === 'rtl' ? 'right' : 'left'} className="w-[240px] sm:w-[300px]">
+              <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
               <div className="flex flex-col gap-4 mt-8">
                 {navItems.map((item) => (
                   <Link key={item.href} href={item.href}>

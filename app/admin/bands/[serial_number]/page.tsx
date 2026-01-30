@@ -56,6 +56,15 @@ export default function BandDetailsPage() {
 
     if (serial_number) {
       fetchBandDetails();
+
+      const intervalId = setInterval(() => {
+        // Silent refresh
+        apiClient.get(`/hardware/bands/${serial_number}`).then(response => {
+          setBand(response.data);
+        }).catch(err => console.error("Auto-refresh failed", err));
+      }, 10000); // 10 seconds
+
+      return () => clearInterval(intervalId);
     }
   }, [serial_number, language, router, t]);
 
@@ -75,9 +84,9 @@ export default function BandDetailsPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <main className="container mx-auto p-4 py-8">
-        <Button 
-          variant="ghost" 
-          onClick={() => router.push('/admin/bands')} 
+        <Button
+          variant="ghost"
+          onClick={() => router.push('/admin/bands')}
           className="mb-4 gap-2"
         >
           <ChevronLeft className={`w-4 h-4 ${dir === 'rtl' ? 'rotate-180' : ''}`} />
@@ -92,11 +101,11 @@ export default function BandDetailsPage() {
                 <Watch className="w-6 h-6 text-primary" />
                 {band.serial_number}
               </CardTitle>
-              <Badge 
+              <Badge
                 className={
                   band.status === 'active' ? 'bg-green-100 text-green-700' :
-                  band.status === 'inactive' ? 'bg-red-100 text-red-700' :
-                  'bg-orange-100 text-orange-700'
+                    band.status === 'inactive' ? 'bg-red-100 text-red-700' :
+                      'bg-orange-100 text-orange-700'
                 }
               >
                 {band.status}
@@ -153,8 +162,17 @@ export default function BandDetailsPage() {
                     <p className="text-lg">{band.current_user_id.phone_number}</p>
                   </div>
                 </div>
-                <Button variant="outline" className="w-full mt-4" onClick={() => band.current_user_id && router.push(`/dashboard/groups/${band.current_user_id._id}/pilgrims/${band.current_user_id._id}`)}>
-                  {language === 'ar' ? 'عرض ملف الحاج' : 'View Pilgrim Profile'}
+                <Button
+                  variant="outline"
+                  className="w-full mt-4"
+                  onClick={() => {
+                    // No reliable group id is available from the band payload.
+                    // Redirecting to the dashboard where the user can open the group
+                    // and view the pilgrim from the group's pilgrims list.
+                    router.push('/dashboard');
+                  }}
+                >
+                  {language === 'ar' ? 'الانتقال للوحة التحكم' : 'Open Dashboard'}
                 </Button>
               </CardContent>
             </Card>
