@@ -18,6 +18,7 @@ import {
 import { toast } from 'sonner';
 import { useLanguage } from '@/lib/LanguageContext';
 import apiClient from '@/lib/api';
+import { MapComponent } from '@/components/ui/MapComponent';
 import { DashboardNavbar } from '@/components/layout/DashboardNavbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -636,14 +637,18 @@ export default function GroupDetailsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="h-80 bg-slate-200 flex flex-col items-center justify-center text-slate-500 relative overflow-hidden">
-                  <MapIcon className="w-12 h-12 mb-2 opacity-20" />
-                  <p className="text-sm font-medium">Interactive Map Integration</p>
-                  <p className="text-xs opacity-60 px-8 text-center mt-2">
-                    {language === 'ar'
-                      ? 'يتم عرض مواقع الحجاج المباشرة هنا عند ربط الأساور'
-                      : 'Live pilgrim locations will appear here once bands are assigned'}
-                  </p>
+                <div className="h-80 bg-slate-100 flex flex-col items-center justify-center text-slate-500 relative overflow-hidden">
+                  <MapComponent
+                    markers={
+                      (group?.pilgrims || [])
+                        .filter((p: any) => p.band_info?.last_location?.lat && p.band_info?.last_location?.lng)
+                        .map((p: any) => ({
+                          lat: p.band_info.last_location.lat,
+                          lng: p.band_info.last_location.lng,
+                          popupText: p.full_name
+                        }))
+                    }
+                  />
                 </div>
                 <div className="p-4 bg-white border-t">
                   <div className="space-y-4">
