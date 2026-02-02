@@ -187,12 +187,12 @@ export default function LandingPage() {
                 <Image
                   key={Date.now()}
                   src="/logo.jpeg"
-                  alt="Durra Care Logo"
+                  alt="Munawwara Care Logo"
                   width={32}
                   height={32}
                   className="rounded-lg"
                 />
-                <span className="font-bold text-lg text-slate-900">Durra Care</span>
+                <span className="font-bold text-lg text-slate-900">Munawwara Care</span>
               </div>
               <p className="text-sm text-slate-500">
                 {t('landing.footer.tagline')}

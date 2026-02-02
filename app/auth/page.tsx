@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import PhoneInput from 'react-phone-number-input/min';
 import 'react-phone-number-input/style.css';
+import { Loader2, ArrowLeft, Mail } from 'lucide-react';
 
 import en from 'react-phone-number-input/locale/en';
 import { getCountryCallingCode, CountryCode, getCountries } from 'libphonenumber-js';
@@ -30,9 +31,9 @@ import { getCountryCallingCode, CountryCode, getCountries } from 'libphonenumber
 const labels: Record<string, string> = { ...en };
 const validCountryCodes = getCountries();
 Object.keys(labels).forEach((code) => {
-  if (validCountryCodes.includes(code as CountryCode)) { // Only process valid country codes
+  if (validCountryCodes.includes(code as CountryCode)) {
     const callingCode = getCountryCallingCode(code as CountryCode);
-    if (callingCode) { // Check if callingCode is found
+    if (callingCode) {
       labels[code] = `${labels[code]} (+${callingCode})`;
     }
   }
@@ -52,10 +53,26 @@ const registerSchema = z.object({
   }),
 });
 
+type AuthView = 'login' | 'register' | 'verify';
+
 export default function AuthPage() {
-  const [isLoginView, setIsLoginView] = useState(true);
+  const [authView, setAuthView] = useState<AuthView>('login');
+  const [pendingEmail, setPendingEmail] = useState('');
+  const [otpCode, setOtpCode] = useState(['', '', '', '', '', '']);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const { t, language } = useLanguage();
   const router = useRouter();
+
+  // Cooldown timer for resend button
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -88,14 +105,18 @@ export default function AuthPage() {
 
   async function onRegisterSubmit(values: z.infer<typeof registerSchema>) {
     try {
-      await apiClient.post('/auth/register', values);
-      toast.success(language === 'ar' ? 'تم إنشاء الحساب بنجاح' : 'Account created successfully');
-      setIsLoginView(true); // Switch to login view after successful registration
+      const response = await apiClient.post('/auth/register', values);
+      if (response.data.success) {
+        setPendingEmail(values.email);
+        setAuthView('verify');
+        setResendCooldown(60); // 60 second cooldown before resend
+        toast.success(language === 'ar' ? 'تم إرسال رمز التحقق إلى بريدك الإلكتروني' : 'Verification code sent to your email');
+      }
     } catch (error: any) {
       if (error.response?.status === 429) {
         toast.error(language === 'ar' ? 'عدد كبير جدًا من محاولات التسجيل، يرجى المحاولة مرة أخرى لاحقًا.' : 'Too many registration attempts, please try again later.');
       } else {
-        let errorMsg = error.response?.data?.error || t('common.error');
+        let errorMsg = error.response?.data?.error || error.response?.data?.message || t('common.error');
         if (error.response?.data?.errors) {
           errorMsg = error.response.data.errors.join('\n');
         }
@@ -108,12 +129,105 @@ export default function AuthPage() {
     }
   }
 
+  // Handle OTP input change
+  const handleOtpChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return; // Only allow digits
+
+    const newOtp = [...otpCode];
+    newOtp[index] = value.slice(-1); // Only take last character
+    setOtpCode(newOtp);
+
+    // Auto-focus next input
+    if (value && index < 5) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  // Handle backspace
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !otpCode[index] && index > 0) {
+      otpInputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  // Handle paste
+  const handleOtpPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    const newOtp = [...otpCode];
+    for (let i = 0; i < pastedData.length; i++) {
+      newOtp[i] = pastedData[i];
+    }
+    setOtpCode(newOtp);
+    // Focus the next empty input or the last one
+    const nextEmptyIndex = newOtp.findIndex(digit => !digit);
+    otpInputRefs.current[nextEmptyIndex === -1 ? 5 : nextEmptyIndex]?.focus();
+  };
+
+  // Verify OTP
+  async function verifyOtp() {
+    const code = otpCode.join('');
+    if (code.length !== 6) {
+      toast.error(language === 'ar' ? 'يرجى إدخال الرمز المكون من 6 أرقام' : 'Please enter the 6-digit code');
+      return;
+    }
+
+    setIsVerifying(true);
+    try {
+      const response = await apiClient.post('/auth/verify-email', {
+        email: pendingEmail,
+        code: code
+      });
+      if (response.data.success) {
+        toast.success(language === 'ar' ? 'تم التحقق من البريد الإلكتروني بنجاح' : 'Email verified successfully');
+        setAuthView('login');
+        setOtpCode(['', '', '', '', '', '']);
+        setPendingEmail('');
+      }
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.message || error.response?.data?.error || t('common.error');
+      toast.error(errorMsg);
+    } finally {
+      setIsVerifying(false);
+    }
+  }
+
+  // Resend verification code
+  async function resendCode() {
+    if (resendCooldown > 0) return;
+
+    setIsResending(true);
+    try {
+      const response = await apiClient.post('/auth/resend-verification', {
+        email: pendingEmail
+      });
+      if (response.data.success) {
+        toast.success(language === 'ar' ? 'تم إعادة إرسال رمز التحقق' : 'Verification code resent');
+        setResendCooldown(60);
+        setOtpCode(['', '', '', '', '', '']);
+      }
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.message || error.response?.data?.error || t('common.error');
+      toast.error(errorMsg);
+    } finally {
+      setIsResending(false);
+    }
+  }
+
+  // Go back from verification
+  const handleBackFromVerify = () => {
+    setAuthView('register');
+    setOtpCode(['', '', '', '', '', '']);
+    setPendingEmail('');
+  };
+
   return (
     <AuthLayout>
+      {/* Login View */}
       <div
-        className={`transition-opacity duration-300 ${isLoginView ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}
+        className={`transition-opacity duration-300 ${authView === 'login' ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}
       >
-        <Image key="logo-login" src="/logo.jpeg" alt="Durra Care" width={64} height={64} className="mx-auto" />
+        <Image key="logo-login" src="/logo.jpeg" alt="Munawwara Care" width={64} height={64} className="mx-auto" />
         <div className="grid gap-2 text-center">
           <h1 className="text-3xl font-bold">{t('auth.welcomeBack')}</h1>
           <p className="text-balance text-muted-foreground">{t('auth.signInToAccount')}</p>
@@ -133,16 +247,17 @@ export default function AuthPage() {
         </Form>
         <div className="mt-4 text-center text-sm">
           {t('auth.noAccount')}{' '}
-          <button onClick={() => setIsLoginView(false)} className="underline">
+          <button onClick={() => setAuthView('register')} className="underline">
             {t('common.register')}
           </button>
         </div>
       </div>
 
+      {/* Register View */}
       <div
-        className={`transition-opacity duration-300 ${!isLoginView ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}
+        className={`transition-opacity duration-300 ${authView === 'register' ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}
       >
-        <Image key="logo-register" src="/logo.jpeg" alt="Durra Care" width={64} height={64} className="mx-auto" />
+        <Image key="logo-register" src="/logo.jpeg" alt="Munawwara Care" width={64} height={64} className="mx-auto" />
         <div className="grid gap-2 text-center">
           <h1 className="text-3xl font-bold">{t('auth.createAccount')}</h1>
           <p className="text-balance text-muted-foreground">{t('auth.registerModerator')}</p>
@@ -168,9 +283,89 @@ export default function AuthPage() {
         </Form>
         <div className="mt-4 text-center text-sm">
           {t('auth.haveAccount')}{' '}
-          <button onClick={() => setIsLoginView(true)} className="underline">
+          <button onClick={() => setAuthView('login')} className="underline">
             {t('common.login')}
           </button>
+        </div>
+      </div>
+
+      {/* Email Verification View */}
+      <div
+        className={`transition-opacity duration-300 ${authView === 'verify' ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}
+      >
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+            <Mail className="w-8 h-8 text-primary" />
+          </div>
+          <div className="grid gap-2 text-center">
+            <h1 className="text-2xl font-bold">{language === 'ar' ? 'تحقق من بريدك الإلكتروني' : 'Verify Your Email'}</h1>
+            <p className="text-muted-foreground text-sm">
+              {language === 'ar'
+                ? `لقد أرسلنا رمز التحقق إلى ${pendingEmail}`
+                : `We've sent a verification code to ${pendingEmail}`}
+            </p>
+          </div>
+
+          {/* OTP Input */}
+          <div className="flex gap-2 mt-4" onPaste={handleOtpPaste}>
+            {otpCode.map((digit, index) => (
+              <input
+                key={index}
+                ref={(el) => { otpInputRefs.current[index] = el; }}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={digit}
+                onChange={(e) => handleOtpChange(index, e.target.value)}
+                onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                className="w-12 h-14 text-center text-2xl font-bold border-2 rounded-lg focus:border-primary focus:outline-none transition-colors bg-background"
+                autoFocus={index === 0}
+              />
+            ))}
+          </div>
+
+          <Button
+            onClick={verifyOtp}
+            className="w-full mt-4"
+            disabled={isVerifying || otpCode.join('').length !== 6}
+          >
+            {isVerifying ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                {language === 'ar' ? 'جارٍ التحقق...' : 'Verifying...'}
+              </>
+            ) : (
+              language === 'ar' ? 'تحقق' : 'Verify'
+            )}
+          </Button>
+
+          <div className="flex flex-col items-center gap-2 mt-2">
+            <p className="text-sm text-muted-foreground">
+              {language === 'ar' ? 'لم تستلم الرمز؟' : "Didn't receive the code?"}
+            </p>
+            <Button
+              variant="ghost"
+              onClick={resendCode}
+              disabled={isResending || resendCooldown > 0}
+              className="text-sm"
+            >
+              {isResending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : null}
+              {resendCooldown > 0
+                ? `${language === 'ar' ? 'إعادة الإرسال خلال' : 'Resend in'} ${resendCooldown}s`
+                : (language === 'ar' ? 'إعادة إرسال الرمز' : 'Resend Code')}
+            </Button>
+          </div>
+
+          <Button
+            variant="link"
+            onClick={handleBackFromVerify}
+            className="mt-2 text-muted-foreground"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            {language === 'ar' ? 'العودة للتسجيل' : 'Back to Register'}
+          </Button>
         </div>
       </div>
     </AuthLayout>

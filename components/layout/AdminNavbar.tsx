@@ -57,7 +57,7 @@ export function AdminNavbar() {
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push('/admin')}>
           <Image
             src="/logo.jpeg"
-            alt="Durra Care Logo"
+            alt="Munawwara Care Logo"
             width={32}
             height={32}
             className="rounded-lg"

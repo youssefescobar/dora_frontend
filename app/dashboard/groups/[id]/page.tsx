@@ -13,7 +13,11 @@ import {
   Trash2,
   Bell,
   AlertTriangle,
-  Pencil
+  Pencil,
+  Mail,
+  ShieldCheck,
+  LogOut,
+  X
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/lib/LanguageContext';
@@ -53,6 +57,7 @@ export default function GroupDetailsPage() {
   const { t, language, dir } = useLanguage();
   const router = useRouter();
   const [group, setGroup] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isEditingGroupName, setIsEditingGroupName] = useState(false);
   const [editedGroupName, setEditedGroupName] = useState('');
@@ -90,6 +95,11 @@ export default function GroupDetailsPage() {
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationTarget, setNotificationTarget] = useState<{ type: 'group' | 'pilgrim', id: string, name?: string } | null>(null);
   const [sendingNoti, setSendingNoti] = useState(false);
+
+  // Invite Moderator State
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [sendingInvite, setSendingInvite] = useState(false);
 
   const handleUpdateGroupName = async () => {
     try {
@@ -154,6 +164,41 @@ export default function GroupDetailsPage() {
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchPilgrimTerm, group?.pilgrims]);
+
+  const fetchCurrentUser = async () => {
+    try {
+      const response = await apiClient.get('/auth/me');
+      setCurrentUser(response.data);
+    } catch (error) {
+      console.error('Failed to fetch user profile', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCurrentUser();
+  }, []);
+
+  const handleRemoveModerator = async (userId: string) => {
+    if (!confirm(language === 'ar' ? 'هل أنت متأكد من إزالة هذا المشرف؟' : 'Are you sure you want to remove this moderator?')) return;
+    try {
+      await apiClient.delete(`/groups/${id}/moderators/${userId}`);
+      toast.success(language === 'ar' ? 'تمت إزالة المشرف بنجاح' : 'Moderator removed successfully');
+      fetchGroupDetails();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || t('common.error'));
+    }
+  };
+
+  const handleLeaveGroup = async () => {
+    if (!confirm(language === 'ar' ? 'هل أنت متأكد من مغادرة المجموعة؟' : 'Are you sure you want to leave this group?')) return;
+    try {
+      await apiClient.post(`/groups/${id}/leave`);
+      toast.success(language === 'ar' ? 'تمت مغادرة المجموعة بنجاح' : 'Left group successfully');
+      router.push('/dashboard');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || t('common.error'));
+    }
+  };
 
   const fetchGroupDetails = async () => {
     try {
@@ -328,6 +373,22 @@ export default function GroupDetailsPage() {
     }
   };
 
+  const handleInviteModerator = async () => {
+    if (!inviteEmail.trim()) return;
+
+    try {
+      setSendingInvite(true);
+      await apiClient.post(`/groups/${id}/invite`, { email: inviteEmail });
+      toast.success(language === 'ar' ? 'تم إرسال الدعوة بنجاح' : 'Invitation sent successfully');
+      setIsInviteDialogOpen(false);
+      setInviteEmail('');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || t('common.error'));
+    } finally {
+      setSendingInvite(false);
+    }
+  };
+
   if (loading && !group) {
     return (
       <div className="min-h-screen bg-slate-50">
@@ -405,6 +466,17 @@ export default function GroupDetailsPage() {
                   {language === 'ar' ? 'حذف المجموعة' : 'Delete Group'}
                 </Button>
 
+                {currentUser && group && group.created_by !== currentUser._id && group.moderator_ids.some((m: any) => m._id === currentUser._id) && (
+                  <Button
+                    variant="outline"
+                    className="gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                    onClick={handleLeaveGroup}
+                  >
+                    <LogOut className="w-4 h-4" />
+                    {language === 'ar' ? 'مغادرة المجموعة' : 'Leave Group'}
+                  </Button>
+                )}
+
                 <Button
                   variant="outline"
                   className="gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
@@ -415,6 +487,15 @@ export default function GroupDetailsPage() {
                 >
                   <Bell className="w-4 h-4" />
                   {t('dashboard.sendAlert')}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="gap-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                  onClick={() => setIsInviteDialogOpen(true)}
+                >
+                  <Mail className="w-4 h-4" />
+                  {language === 'ar' ? 'دعوة مشرف' : 'Invite Moderator'}
                 </Button>
 
                 <Dialog open={isRegDialogOpen} onOpenChange={(open) => {
@@ -679,6 +760,48 @@ export default function GroupDetailsPage() {
           </div>
 
           <div className="w-full lg:w-96 space-y-6">
+            <Card className="shadow-sm border border-slate-200">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-primary" />
+                  {language === 'ar' ? 'المشرفون' : 'Moderators'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {group?.moderator_ids?.map((mod: any) => (
+                    <div key={mod._id} className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                        {mod.full_name?.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-900 truncate">
+                          {mod.full_name}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">{mod.email}</p>
+                      </div>
+                      {currentUser && group && group.created_by === currentUser._id && mod._id !== currentUser._id && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => handleRemoveModerator(mod._id)}
+                          title={language === 'ar' ? 'إزالة المشرف' : 'Remove Moderator'}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  {(!group?.moderator_ids || group.moderator_ids.length === 0) && (
+                    <p className="text-sm text-muted-foreground text-center py-2">
+                      {language === 'ar' ? 'لا يوجد مشرفين' : 'No moderators'}
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
             <Card className="h-[500px] relative overflow-hidden shadow-xl border-0 ring-1 ring-slate-900/5 group">
               <div className="absolute inset-0 z-0 h-full w-full">
                 <MapComponent
@@ -822,6 +945,39 @@ export default function GroupDetailsPage() {
             </Button>
             <Button onClick={handleSendNotification} disabled={sendingNoti || !notificationMessage.trim()}>
               {sendingNoti ? <Loader2 className="w-4 h-4 animate-spin" /> : language === 'ar' ? 'إرسال' : 'Send'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Invite Moderator Dialog */}
+      <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{language === 'ar' ? 'دعوة مشرف' : 'Invite Moderator'}</DialogTitle>
+            <DialogDescription>
+              {language === 'ar'
+                ? 'أدخل البريد الإلكتروني للمشرف الذي تريد دعوته للانضمام إلى هذه المجموعة'
+                : 'Enter the email address of the moderator you want to invite to this group'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="invite_email">{t('common.email')}</Label>
+            <Input
+              id="invite_email"
+              type="email"
+              placeholder={language === 'ar' ? 'example@email.com' : 'example@email.com'}
+              value={inviteEmail}
+              onChange={e => setInviteEmail(e.target.value)}
+              className="mt-2"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsInviteDialogOpen(false)} disabled={sendingInvite}>
+              {t('common.cancel')}
+            </Button>
+            <Button onClick={handleInviteModerator} disabled={sendingInvite || !inviteEmail.trim()}>
+              {sendingInvite ? <Loader2 className="w-4 h-4 animate-spin" /> : language === 'ar' ? 'إرسال الدعوة' : 'Send Invitation'}
             </Button>
           </DialogFooter>
         </DialogContent>

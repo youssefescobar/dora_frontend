@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Durra Care - SmartBand Management",
+  title: "Munawwara Care - SmartBand Management",
   description: "Advanced tracking and safety for pilgrims",
 };
 

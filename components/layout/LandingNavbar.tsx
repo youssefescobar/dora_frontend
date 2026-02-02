@@ -23,7 +23,7 @@ export function LandingNavbar() {
           <Image
             key={Date.now()}
             src="/logo.jpeg"
-            alt="Durra Care Logo"
+            alt="Munawwara Care Logo"
             width={40}
             height={40}
             className="rounded-lg shadow-sm"

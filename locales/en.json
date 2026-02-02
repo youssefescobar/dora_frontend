@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "Durra Care",
+    "appName": "Munawwara Care",
     "login": "Login",
     "register": "Register",
     "logout": "Logout",
@@ -90,7 +90,7 @@
       "alerts": "Smart Alerts",
       "alertsDesc": "Send instant notifications to individuals or the entire group with a single click.",
       "hardware": "IoT Wristband Integration",
-      "hardwareDesc": "Seamlessly connect with Durra smart bands for automated data collection.",
+      "hardwareDesc": "Seamlessly connect with Munawwara smart bands for automated data collection.",
       "groupManagement": "Group Management",
       "groupManagementDesc": "Easily organize pilgrims into sub-groups and assign moderators for better supervision.",
       "dataSecurity": "Data Security",
@@ -105,7 +105,7 @@
     },
     "cta": {
       "title": "Ready to transform your Hajj operations?",
-      "subtitle": "Join hundreds of operators who trust Durra Care for their pilgrim safety and management needs.",
+      "subtitle": "Join hundreds of operators who trust Munawwara Care for their pilgrim safety and management needs.",
       "contactSales": "Contact Sales"
     },
     "footer": {
@@ -122,7 +122,7 @@
       "twitter": "Twitter",
       "linkedin": "LinkedIn",
       "instagram": "Instagram",
-      "copyright": "© Durra Care. All rights reserved.",
+      "copyright": "© Munawwara Care. All rights reserved.",
       "termsLink": "Terms",
       "privacyLink": "Privacy",
       "cookiesLink": "Cookies"

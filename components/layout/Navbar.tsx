@@ -21,7 +21,7 @@ export function Navbar() {
         <div className="flex items-center gap-2">
           <Image
             src="/logo.jpeg"
-            alt="Durra Care Logo"
+            alt="Munawwara Care Logo"
             width={40}
             height={40}
             className="rounded-lg shadow-sm"
